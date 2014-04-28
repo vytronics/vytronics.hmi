@@ -1,5 +1,26 @@
 <!doctype html>
 <html lang="en" ng-app>
+    
+<!--
+Copyright 2014 Charles Weissman
+
+This file is part of "Vytroncs HMI, the 100% Free, Open-Source SCADA/HMI Initiative"
+herein referred to as "Vytronics HMI".
+
+Vytronics HMI is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vytronics HMI is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
+--> 
+    
 <!--
 Default SCADA desktop HTML file. This file should not normally be used. It is
 only provided to make a working system from a default install. It loads a default home
@@ -10,7 +31,7 @@ with one or more iframe for loading HMI displays. This default has just one ifra
 of a fixed size but you could, in javascript document ready processing resize the
 iframe, set to full screen, etc.
 
-You can use this file as a starting point for the index.js in your project folder.
+You can use this file as a starting point for the index.html in your project folder.
 The default location is in ./project in the root folder. Use VYTRONICS_PROJDIR
 environment to tell the server where to find your folder if using a different location.
 
@@ -63,7 +84,7 @@ $(document).ready( function() {
 		namespace to link elements to tags etc. These directives are parsed on load to
 		create the real-time dynamics.
 	-->		
-    <iframe id="stage" class="vy-stage" width="600" height="400" scrolling="no">
+    <iframe id="stage" class="vy-stage" width="480" height="400" >
     </iframe>
 	
 </body>
