@@ -1,5 +1,5 @@
 /*
-Copyright 2014 Vytroncs.com and Charles Weissman
+Copyright 2014 Charles Weissman
 
 This file is part of "Vytroncs HMI, the 100% Free, Open-Source SCADA/HMI Initiative"
 herein referred to as "Vytronics HMI".
@@ -79,7 +79,7 @@ var vyhmi = (function (){
     
     //Fit contents to the hosted iframe. Zoom to fit maintaining aspect. Should be put in
     //the SVG element of the page. Set background to optional pagecolor
-    function scale_fit(elem, pagecolor) {
+    function scale_fit_svg(elem, pagecolor) {
         
         //Get extents of the contained contents
         var BB = elem.getBBox();                
@@ -218,7 +218,7 @@ var vyhmi = (function (){
         load_script: load_script,
         load_widget: load_widget,
         app_call: app_call,
-        scale_fit: scale_fit,
+        scale_fit_svg: scale_fit_svg,
         map_attr: map_attr,
         rotate: rotate
     };

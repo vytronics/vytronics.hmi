@@ -18,9 +18,9 @@ You should have received a copy of the GNU Affero General Public License
 along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-This is the default project demo folder. It is only intended to run a demo
-system for an out-of-the-box install. It is recommended to NOT use this folder.
-Use the project folder in the root folder. Or, somewhere outside and then set the environment variable VYTRONICS_PROJDIR prior to starting the server.
+This is the default project folder. Put your project.json and other files here
+or somewhere outside and then set the environment variable VYTRONICS_PROJDIR prior
+to starting the server.
 
 Environment variables may include indirect references using
 a string ${MY_ENV_VAR}. This allows environment variables to be

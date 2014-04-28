@@ -3,8 +3,9 @@ Vytronics.HMI
 
 The 100% Free, Open-Source, SCADA/HMI Iniative.
 
-Copyright 2014 Vytroncs.com and Charles Weissman
+Copyright 2014 Charles Weissman
 
+See Installation and Evaluation section below for instructions on how to setup a free, cloud-based IDE and working SCADA system in just a few minutes.
 
 ---
 Vytronics.HMI is donated to the community by the author, Chuck Weissman, founder of [www.vytronics.com], to enable and encourage the deployment of Internet-Enabled supervisory and control for everything from consumer appliances to factory automation in the support of the founder's vision:
@@ -12,7 +13,6 @@ Vytronics.HMI is donated to the community by the author, Chuck Weissman, founder
 > ... to reduce every man and woman's carbon footprint through the elimination of unnecessary energy consumption in the performance of tasks that can be securely and effectively accomplished remotely.
 
 ---
-
 
 
 Vytronics.HMI aims to be the world's fastest growing and most popular Open-Source SCADA/HMI. It is the first and (at the time of initial publishing) the only system that supports all of the following capabilities:

@@ -16,3 +16,4 @@ node_modules/*
 !node_modules/README.txt
 
 project/*
+!project/README.txt

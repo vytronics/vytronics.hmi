@@ -1,5 +1,5 @@
 /*
-Copyright 2014 Vytroncs.com and Charles Weissman
+Copyright 2014 Charles Weissman
 
 This file is part of "Vytroncs HMI, the 100% Free, Open-Source SCADA/HMI Initiative"
 herein referred to as "Vytronics HMI".
@@ -135,6 +135,16 @@ var vy = (function () {
             //array good enough to release all references?
 		});
 	}    
+    
+    
+    function unsubscribeStageDocTags(doc){
+         var hmi_id = doc['__hmi_id'];
+        tag_subs.forEach( function(sub){
+            if (hmi_id===sub.hmi_id){
+                unsubscribe(sub);
+            }
+        });
+    }
     
     //Function to evaluate code in the global context of an HMI iframe. Uses same concept as the
     //Jquery getScript method except injects in the iframe and into a container that is valid for

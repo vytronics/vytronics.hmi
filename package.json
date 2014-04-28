@@ -5,7 +5,7 @@
   "main": "server.js",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/vytronics/vytronics.hmi.git"
   },
   "author": "Chuck Weissman <support@vytronics.com>",
   "dependencies": {

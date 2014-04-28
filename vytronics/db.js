@@ -1,5 +1,5 @@
 /*
-Copyright 2014 Vytroncs.com and Charles Weissman
+Copyright 2014 Charles Weissman
 
 This file is part of "Vytroncs HMI, the 100% Free, Open-Source SCADA/HMI Initiative"
 herein referred to as "Vytronics HMI".

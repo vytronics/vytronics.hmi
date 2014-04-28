@@ -6,7 +6,7 @@
         },
         "sim-increment": {
             "defaultValue": 0,
-            "driverinfo": {"id":"sim", "item":"increment:1000:0:1"}
+            "driverinfo": {"id":"sim", "item":"increment:1000:0:10"}
         },
         "sim-random-delta": {
             "defaultValue": 0,
