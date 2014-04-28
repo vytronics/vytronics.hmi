@@ -2,7 +2,7 @@
 <html>
 
 <!--
-Copyright 2014 Vytroncs.com and Charles Weissman
+Copyright 2014 Charles Weissman
 
 This file is part of "Vytroncs HMI, the 100% Free, Open-Source SCADA/HMI Initiative"
 herein referred to as "Vytronics HMI".
@@ -79,10 +79,9 @@ folder.
                         });
 
                         $('#table-container').append(table);
-                    }
-                    
-                    //Subscribe to each table rows tag to update the value column
-                    $('#tags_table tbody tr').each( function(i,tr) {
+                        
+                        //Subscribe to each table rows tag to update the value column
+                        $('#tags_table tbody tr').each( function(i,tr) {
                         var row_data = $(tr).find('td');
                         var elem = row_data[1]; //the element where tag value goes
                         var tagid = $(row_data[0]).text(); //has the tagid
@@ -90,9 +89,12 @@ folder.
                             $(elem).text(tag.value);
                             //console.log('tag changed id:' + tag.id + ' value:' + tag.value);
                         };
+                            
+                        //Here is the magic.
+                        //Link tags changes to this table data element
                         vyhmi.linktag(elem, tagid, callback);
                     });
-                    
+                    }                    
                 });
             }
 
@@ -105,7 +107,15 @@ folder.
             You have reached the default home display of your Vytronics HMI core distribution in ./project_demo becuase there are no project files in the default ./project folder and the VYTRONICS_PROJDIR env is not set to point to another location. This is probably not what you wanted. The tags values in the table below may be from the sample ./project_demo/project.json of the Vytronics HMI core distribution (i.e., sim-random-binary etc.). Again, this is probably not what you want. You should create a project directory somewhere outside the root install and include a project specific project.json, desktop and HMI displays. Visit <a href="www.vytronics.com">www.vytronics.com</a> for all sorts of documentation, blog tutorials, forums and other developer and user resources.
         </div>
         <br>
+        <!-- Will get filled in by a script that queries server for tags, creates rows for each
+            and subscribing to their real-time changes to update cell values. -->
         <div id="table-container"></div>
+        <br>
+        <div>
+            <!-- Navigate to another HMI display -->
+            <input type="button" value="PRESS ME TO SEE SHAPES!" onclick="location.replace('/shapes.svg')" />
+        
+        </div>
     </body>
 
 </html>
