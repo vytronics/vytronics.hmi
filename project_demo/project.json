@@ -1,0 +1,16 @@
+{
+    "tags": {
+        "sim-random-binary": {
+            "defaultValue": 0,
+            "driverinfo": {"id":"sim", "item":"randomInt:1000:1:0:1"}
+        },
+        "sim-increment": {
+            "defaultValue": 0,
+            "driverinfo": {"id":"sim", "item":"increment:1000:0:1"}
+        },
+        "sim-random-delta": {
+            "defaultValue": 0,
+            "driverinfo": {"id":"sim", "item":"randomDelta:1000:50:0:100:5"}
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "vytronics.hmi",
+  "version": "0.0.0",
+  "description": "Vytronics HMI - The 100% Free, Open-Source, SCADA/HMI Initiative",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "Chuck Weissman <support@vytronics.com>",
+  "dependencies": {
+    "async": "~0.2.8",
+    "express": "~3.2.4",
+    "socket.io": "~0.9.14"
+  }
+}
