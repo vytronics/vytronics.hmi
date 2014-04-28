@@ -1,0 +1,67 @@
+<svg width="640" height="480" xmlns="http://www.w3.org/2000/svg"
+     xmlns:svg="http://www.w3.org/2000/svg"
+     xmlns:vy="http://www.vytronics.com/hmi"
+     vy:instrument="vyhmi.scale_fit_svg(this)" >
+ <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+ <g>
+<script>
+    //Scale a rect height based on a tag value
+    function scalebar(elem, tagid) {
+        var h_orig = elem.getAttribute('height');
+
+        function draw(tag){
+            elem.setAttribute('height', h_orig*(1 - (tag.value / 100.0)) );
+        }
+    
+        vyhmi.create_tagsub(tagid, draw);
+    }
+</script>
+     
+
+  <ellipse fill="#FF0000" stroke="#000000" stroke-width="2" cx="138" cy="87" id="svg_1" rx="34" ry="34"
+           vy:instrument="vyhmi.map_attr(this,'sim-random-binary','style', ['fill:red', 'fill:green'])"/>
+  <text fill="#000000" stroke="#000000" stroke-width="0" x="138" y="148" id="svg_2" font-size="18" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">sim-random-binary:</text>
+  <g id="svg_6" vy:instrument="vyhmi.rotate(this,'sim-increment');">
+   <ellipse fill="#FAFAFA" stroke="#000000" stroke-width="2" cx="139" cy="200.5" rx="34" ry="34" id="svg_3"/>
+   <line stroke="#000000" id="svg_4" y2="200.5" x2="172.00617" y1="200.5" x1="142" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="2" fill="none"/>
+  </g>
+  <text id="svg_7" fill="#000000" stroke="#000000" stroke-width="0" x="135" y="262.5" font-size="18" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">sim-increment:</text>
+  <rect id="svg_8" height="160" width="32" y="39" x="374" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="2" stroke="#000000" fill="#cccccc"/>
+     
+     
+  <rect id="backbar" height="149" width="18" y="45" x="381" stroke-width="0" fill="#ff00ff" />
+  <rect id="frontbar" height="149" width="18" y="45" x="381" stroke-width="0" fill="#fefefe"
+        vy:instrument="scalebar(this, 'sim-random-delta')"/>
+        
+
+  <text fill="#000000" stroke="#000000" stroke-width="0" x="390" y="242.5" font-size="18" font-family="Sans-serif" text-anchor="middle" xml:space="preserve" id="svg_5">sim-random-delta</text>
+  <g id="svg_12">
+   <rect height="27" width="64" y="129.5" x="222" stroke-width="0" fill="#000000" id="svg_10"/>
+      
+   <text fill="#00ff00" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="255" y="149" id="svg_11" font-size="18" font-family="Sans-serif" text-anchor="middle" xml:space="preserve"
+         vy:instrument="vyhmi.linktag(this,'sim-random-binary','elem.textContent=tag.value');"         
+         >000</text>
+  </g>
+  <g id="svg_13">
+   <rect id="svg_14" height="27" width="64" y="241.5" x="212" stroke-width="0" fill="#000000"/>
+      
+   <text id="svg_15" fill="#00ff00" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null"
+         x="245" y="261" font-size="18" font-family="Sans-serif" text-anchor="middle" xml:space="preserve"
+         vy:instrument="vyhmi.linktag(this,'sim-increment','elem.textContent=tag.value%360');" >000</text>
+  </g>
+  <g id="svg_16">
+   <rect id="svg_17" height="27" width="64" y="200.5" x="358" stroke-width="0" fill="#000000"/>
+   <text id="svg_18" fill="#00ff00" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null"
+         stroke-linecap="null" x="391" y="220" font-size="18" font-family="Sans-serif"
+         text-anchor="middle" xml:space="preserve"
+         vy:instrument="vyhmi.linktag(this,'sim-random-delta','elem.textContent=tag.value');" >000</text>
+  </g>
+  <g id="svg_21">
+   <rect fill="#00bfbf" stroke="#000000" x="222" y="296" width="109" height="32" id="svg_19" rx="5" ry="5"/>
+   <text fill="#000000" stroke="#000000" stroke-width="0" stroke-dasharray="null"
+         stroke-linejoin="null" stroke-linecap="null" x="276.5" y="318.5" id="svg_20" font-size="18"
+         font-family="Sans-serif" text-anchor="middle" xml:space="preserve"
+         onclick="location.replace('/home.html')">PRESS ME</text>
+  </g>
+ </g>
+</svg>
