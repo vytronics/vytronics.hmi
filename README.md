@@ -60,6 +60,7 @@ Installation and Evaluation
 - Visit [Cloud9 IDE] and sign up for your own free cloud-based IDE.
 - Click on "Create a New Workspace" and select the "Clone from URL" option.
 - Paste the following URL into the form: https://github.com/vytronics/vytronics.hmi.git
+- Important - Click on the "NodeJS" button and then press Create
 
 This will create a new workspace named "vytronics.hmi". It will take several minutes for the IDE to create a virtual machine. The workspace will automatically open up when completed. There will be one root folder with the same name as the project. It contains all of the source code of the core HMI which includes a default demo project. Open-Source 3rd party modules are not part of the core and are not downloaded automatically. No worries, just follow the following instruction to download, install and configure them automatically using the Node Package Manager (npm).
 
