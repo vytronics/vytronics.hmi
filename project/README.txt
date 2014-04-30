@@ -20,7 +20,8 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 
 This is the default project folder. Put your project.json and other files here
 or somewhere outside and then set the environment variable VYTRONICS_PROJDIR prior
-to starting the server.
+to starting the server. Note that web accessible files must be in subfolder
+hmi.
 
 Environment variables may include indirect references using
 a string ${MY_ENV_VAR}. This allows environment variables to be
