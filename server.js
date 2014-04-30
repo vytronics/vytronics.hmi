@@ -103,7 +103,7 @@ io.set('log level', 1);
 router.use(express.static(path.resolve(__dirname,'client')));
 
 //This is the actual client directory and takes 2nd precedence.
-router.use(express.static(projectdir));
+router.use(express.static(path.resolve(projectdir,'hmi')));
 
 //Listen for client connections and create clients
 io.on('connection', function (socket) {
