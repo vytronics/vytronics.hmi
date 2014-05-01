@@ -94,4 +94,4 @@ GNU AFFERO GENERAL PUBLIC LICENSE
 [Cloud9 IDE]:http://https://c9.io/
 [HTML5]:http://www.w3.org/TR/html5/
 [SVG]:http://www.w3.org/Graphics/SVG/
-[Click here for live demo]:http://demo-vytronics.rhcloud.com:8000/
+[Click here for live demo!]:http://demo-vytronics.rhcloud.com:8000/
