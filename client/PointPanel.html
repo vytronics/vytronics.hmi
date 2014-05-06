@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en" ng-app>
+    
+<!--
+/*
+Copyright 2014 Charles Weissman
+
+This file is part of "Vytroncs HMI, the 100% Free, Open-Source SCADA/HMI Initiative"
+herein referred to as "Vytronics HMI".
+
+Vytronics HMI is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vytronics HMI is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
+*/
+-->
+
+<!--
+Web interface for monitor and control of drivers and ports for diagnotics,
+development and testing.
+-->
+    
+    
+<head>
+<title>POINTS PANEL</title>
+
+<!-- all desktop designs must source the following scripts. The jquery and vytronics vy-client
+	libraries are made available to any content loaded into HMI iframes and is used as well
+	for the general pluming implementing the web-based HMI. This particular html file does not
+    use any iframes though.
+-->
+
+<script src="/script/jquery.min.js"></script>
+<script src="/script/vy-desktop.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+    
+<!-- open source MIT licensed data tables ui -->
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.0/css/jquery.dataTables.css"/>
+<script src="//cdn.datatables.net/1.10.0/js/jquery.dataTables.js"></script>
+    
+<!-- for tabbed display and other UI stuff -->
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+
+
+<!-- styles unique to this page -->
+<style>
+    
+    .mainPanel {
+        width: 480px;  
+        
+    }
+    
+</style>
+
+
+<!-- Styles for JqueryUI -->
+<style>
+    body { font-size: 62.5%; }
+    label, input { display:block; }
+    input.text { margin-bottom:12px; width:95%; padding: .4em; }
+    fieldset { padding:0; border:0; margin-top:25px; }
+    h1 { font-size: 1.2em; margin: .6em 0; }
+    div#users-contain { width: 350px; margin: 20px 0; }
+    div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+    div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+    .ui-dialog .ui-state-error { padding: .3em; }
+    .validateTips { border: 1px solid transparent; padding: 0.3em; }
+</style>
+    
+    
+<!-- scripts for jqueryui dialogs -->
+<script>
+  $(function() {
+    var tagid = $('#tagid'),
+        value = $( '#value' );
+  
+    $( "#write-form" ).dialog({
+      autoOpen: false,
+      height: 250,
+      width: 250,
+      modal: true,
+      buttons: {
+        Write: function() {
+            var dialog = $(this);            
+            vy.app_call('write_tag', {tagid:tagid.val(), value:value.val()}, function(data,err){            
+                dialog.dialog("close");
+            });
+         },
+        Apply: function() {
+            vy.app_call('write_tag', {tagid:tagid.val(), value:value.val()}, function(data,err){                
+            });
+         },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      },
+      close: function() {
+        //cleanup?
+      },
+      open: function() {
+          //Init fields based on data set when opened
+          tagid.val($(this).data('tagid'));
+          value.val($(this).data('value'));
+      }
+    });
+  });
+</script>    
+    
+<script>
+    
+    //Insturment tabbed displays
+    $(function() {
+        $( "#tabs" ).tabs();
+    });
+    
+    function build_points_table(div){
+        
+        $(div).empty(); //Clear the container out
+        
+        //Query server for points and build table
+        vy.app_call('query_tags', {}, function(data,err){   
+            if(err) {
+                console.log('query_tags error:' + err.message);
+                return;
+            }  
+
+            var table = $('<table class="display" id="points_table"/>').append(
+                $("<thead/>").append(
+                  $("<tr/>").append(
+                      $("<td>").text("POINT ID"),
+                      $("<td>").text("VALUE"))),
+                $("<tbody>").append(
+                    function() {
+                        var rows = [];
+                        data.forEach( function(tagid){
+                            //Create a row for each tag
+                            var row = ($("<tr>").append(
+                                    $("<td>").text(tagid),
+                                    function(){
+                                        var td = $("<td>").text('---');
+                                        //Subscribe to tag
+                                        td.on('click', function() {
+                                            console.log('You clicked on data for tag:' + tagid);
+                                            $('#write-form')
+                                                .data('tagid', tagid)
+                                                .data('value',td.text())
+                                                .dialog('open');
+                                        });
+                                        vy.create_tagsub('pointPanel', tagid, function(tag){                                
+                                            td.text(tag.value);                                
+                                        });
+                                        return td;
+                                    }()));                            
+                            rows.push(row);                            
+                        });
+                        return rows;                        
+                    }())
+            );
+
+            $(div).append(table);
+                $("#points_table").DataTable(); //Make it pretty using dataTables.js
+        });   
+    }
+
+    function build_drivers_table(div){
+        
+        $(div).empty(); //Clear the container out
+        
+        //Query server for points and build table
+        vy.app_call('query_driver_info', {}, function(data,err){   
+            if(err) {
+                console.log('query_driver_info error:' + err.message);
+                return;
+            }  
+
+            var table = $('<table class="display" id="drivers_table"/>').append(
+                $("<thead/>").append(
+                  $("<tr/>").append(                  
+                      $("<td>").text("DRIVER ID"),
+                      $("<td>").text("URI"),
+                      $("<td>").text("START/STOP")
+                    )),
+                $("<tbody>").append(
+                    function() {
+                        var rows = [];
+                        data.forEach( function(driverInfo){
+                            //Create a row for each driver
+                            var row = ($("<tr>").append(
+                                    $("<td>").text(driverInfo.id),
+                                    $("<td>").text(driverInfo.uri),
+                                    function(){
+                                        var td = $("<td>").text('---');                                        
+                                        //Subscribe to started tag
+                                        var tagid = 'sys.driver.' + driverInfo.id + '.started';
+                                        vy.create_tagsub('pointPanel', tagid, function(tag){                                
+                                            td.text(tag.value);                                
+                                        });
+                                        return td;
+                                    }()));                                    
+                            rows.push(row);                            
+                        });
+                        return rows;                        
+                    }())
+            );
+
+            $(div).append(table);
+                $("#drivers_table").DataTable(); //Make it pretty using dataTables.js
+        });   
+    }
+    
+    
+    function drawTables(){
+        //Build a table for points
+        build_points_table('#pointPanel');
+        build_drivers_table('#driverPanel');
+    }
+
+    //Handle socket connection status
+    function onSocketStatus(connected){
+        if(connected) {
+            drawTables();
+        }
+        else {
+            disableTables();
+        }        
+    }
+    
+
+    /*
+    On document ready listen for connection status
+    */
+    $(document).ready( function() {
+
+        vy.addConnectionListener(onSocketStatus);
+
+    });
+
+</script>
+
+</head>
+
+<body>
+    <!--hidden form instrumented by JQueryUI script. Pops up when user clicks on point value-->
+    <div id="write-form" title="WRITE TAG VALUE">
+        <form>
+        <fieldset>
+            <label for="tagid">TAG ID</label>
+            <input type="text" name="tagid" id="tagid" value="" class="text ui-widget-content ui-corner-all">
+            <label for="value">VALUE</label>
+            <input type="text" name="value" id="value" value="" class="text ui-widget-content ui-corner-all">
+        </fieldset>
+        </form>
+    </div>
+     
+    
+    <div id="tabs" class="mainPanel">
+      <ul>
+        <li><a href="#pointPanel">Point Panel</a></li>
+        <li><a href="#driverPanel">DriverPanel</a></li>
+      </ul>
+      <div id="pointPanel">  
+      </div>
+      <div id="driverPanel">  
+      </div>
+    </div>    
+
+</body>
+
+</html>
