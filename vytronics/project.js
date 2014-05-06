@@ -83,7 +83,7 @@ var load = function(projectdir) {
 		//load driverdb
 		db.driverdb.load(json.drivers, db.projectdir);
 		
-		//load tagdb
+		//load tagdb and create system tags
 		db.tagdb.load(json.tags);
         
         //Load remote procedure calls database
@@ -96,15 +96,20 @@ var load = function(projectdir) {
 		//Link up drivers
 		var tags = db.tagdb.getTags();
 		tags.forEach( function(tid) {
-			var tag = db.tagdb.getTag(tid);						
+			var tag = db.tagdb.getTag(tid);
+            
 			if(tag.driverinfo) {
 				db.driverdb.subscribe(tag.id, tag.driverinfo);
 			}
+            
+            //Otherwise this is an in memory tag
+            
 		});
 		
 		//Start drivers
-		db.driverdb.emitter.on("drivervalue", function(driverid, item, tags, value) {
-			//console.log("	tags:",tags);
+		db.driverdb.emitter.on("drivervalue", function(driverid, tags, value, item) {
+			//Note that item param is not really needed. Just included for debug and
+            //may get rid of it all together
 			tags.forEach( function(tagid) {
 				var tag = db.tagdb.getTag(tagid);
 				tag.setValue(value);
