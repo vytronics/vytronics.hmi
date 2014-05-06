@@ -104,6 +104,26 @@ exports.calls.query_tags = {
     }
 };
 
+//Query for driver data
+exports.calls.query_driver_info = {
+    call_function: function(call_data) {
+        return db.driverdb.getDriversInfo();
+    }
+};
+
+exports.calls.start_driver = {
+    call_function: function(call_data) {
+        return db.driverdb.start(call_data);
+    }    
+}
+
+exports.calls.stop_driver = {
+    call_function: function(call_data) {
+        return db.driverdb.stop(call_data);
+    }    
+}
+
+
 //Load rpcdb from project.json section
 //  This sets some global config and may point to
 //  application specific rpc add-ons
