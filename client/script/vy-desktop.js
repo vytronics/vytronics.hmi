@@ -30,12 +30,15 @@ var vy = (function () {
     
     'use strict';
 
-    var socket, vyns, hmiCount, tag_subs;
+    var socket, vyns, hmiCount, tag_subs, socket_connect_listeners;
     
     hmiCount = 1; //Global counter used to create unique HMI iframe client IDs
     
     tag_subs = []; //Array of current active tag subscriptions
-	
+    
+    socket_connect_listeners = []; //Array of HMTL clients that want socket connection events.
+    //Each listener supplies a routine function(connected)
+    
     //One socket per desktop
     socket = undefined;
     
@@ -268,6 +271,21 @@ var vy = (function () {
             subscribe(sub);
         });
     }
+    
+    //Let HTML listen to connection status
+    //The callback is function(isConnected)
+    function addConnectionListener (callback){
+        if (socket_connect_listeners.indexOf(callback)){
+            socket_connect_listeners.push(callback);
+        }
+    }
+    function removeConnectionListener (callback){
+        var idx = socket_connect_listeners.indexOf(callback);
+        if (-1 !== idx){
+            socket_connect_listeners.splice(idx,1);
+        }
+    }
+
 		
 	//What to do when desktop window is loaded.
 	$(document).ready(function () {
@@ -298,14 +316,38 @@ var vy = (function () {
 			});
             
 	
-        //========= Socket stuff
+        //========= Socket stuff                        
         socket = io.connect();
 		socket.on("connect", function () {
 			console.log("socket connected");
 			//re-request all subscriptions
 			subscribeAllTags();
+            
+            //Notify clients
+            socket_connect_listeners.forEach(function(listener){
+                try {
+                    listener(true);
+                } catch (err){
+                    console.log('Exception in connection listener:' + err.message);
+                }
+            });
 		});
 
+        socket.on('disconnect', function () {
+            //Notify clients
+            socket_connect_listeners.forEach(function(listener){
+                try {
+                    listener(false);
+                } catch (err){
+                    console.log('Exception in connection listener:' + err.message);
+                }
+            });
+        });
+
+        socket.on('reconnect_failed', function () {
+            //TODO - something nicer and maybe provide a reconnect button
+            alert("Reconnection failed.");
+        });
         //tagChanged message
         //Format {  id:tagid,
         //          changes: {
@@ -327,24 +369,21 @@ var vy = (function () {
                                 ' callback:', sub.callback);
                 }
             });
-		});
-        
-        socket.on('reconnect_failed', function () {
-            //TODO - something nicer and maybe provide a reconnect button
-            alert("Reconnection failed.");
-        });
+		});        
     });
     
     //Execute a remote function call on the server and invoke callback(result_data, err) when complete
     function app_call(name, call_data, callback) {
         socket.emit("app_call", name, call_data, function(result_data, err) {
-            //console.log('app_call result:', result_data);
+            console.log('app_call result:', result_data);
             callback(result_data, err);
         });
     }
 			
 	//Return public members
     return {
+        addConnectionListener: addConnectionListener,
+        removeConnectionListener: removeConnectionListener,
         HMI_ID: HMI_ID,
         injectScript: injectScript,  //Make this available in client
         create_tagsub: create_tagsub,
