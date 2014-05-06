@@ -197,6 +197,15 @@ function SimDriver() {
 	return this;
 }
 
+//Driver must define a read_item method that provides the current value
+SimDriver.prototype.read_item = function (item){
+    var obj = this.simulators[item];
+    if (!obj) return undefined;
+    
+    return obj.value;
+    
+}
+
 //Driver object must define a register function to instantiate a registration to a specific
 //item.
 //	item - "functionName:param1:param2:etc."
@@ -233,7 +242,7 @@ SimDriver.prototype.register = function(item) {
 
 //Helper function to set a value and emit 'itemvalue' if it is a new object value
 SimDriver.prototype.set_value = function(simObj, value) {
-    
+
     var oldval = simObj.value;
     
     if ( value != oldval) {
@@ -278,13 +287,14 @@ SimDriver.prototype.start = function() {
 
 //Driver object must define a stop method to be called by the driver database.
 SimDriver.prototype.stop = function() {
-	console.log("simdriver stopped.");
-	    
+	console.log("simdriver stopped.");	    
+
     Object.getOwnPropertyNames(this.simulators).forEach(function(prop) {
-        var simObj = simulators[prop];
-        var counter=1;
+        //ForEach function passed the SimDriver object as this var
+        var simObj = this.simulators[prop];
         clearInterval(simObj.timer);
-    });
+        simObj.timer = undefined;
+    }, this);
 };
 
                                    
@@ -294,9 +304,10 @@ SimDriver.prototype.stop = function() {
 SimDriver.prototype.write_item = function (item, value) {
 
     //Silent error
-    if( ! this.simulators[item] ) return false;
+    var simObj = this.simulators[item];
+    if( !simObj  ) return false;
     
-    set_value.call(this, item, value);
+    this.set_value(simObj, value);
     
     return true;
     

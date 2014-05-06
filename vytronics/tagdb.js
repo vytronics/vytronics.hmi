@@ -53,15 +53,29 @@ var load = function (json) {
 	if ( undefined === json ) {
 		return;
 	}
-	
-	//console.log("Loadings tags from json:", json);
-	
+		
 	for( var tagid in json ) { 
 		if( json.hasOwnProperty(tagid ) ) {
+            
+            //sys.* is reserved
+            if (/^sys\..*/.exec(tagid)){
+                console.log('tagdb load error sys.* is a reserved tag id pattern.');
+                continue;
+            }
+            
 			tags[tagid] = new Tag(tagid,json[tagid]);
 		}
 	}
 };
+
+//TODO - exposed this for sysdriver to create system tags
+//Need more work to make it general and ensure other useages
+//properly link up to drivers and get post load processing
+//Also need to do more validation such as duplicate tags etc.
+exports.create_tag = function(tagid, config) {
+    var tag = new Tag(tagid, config);
+    tags[tagid] = tag;
+}
 
 var start = function() {
 	//Kick off any periodic calculations
@@ -117,8 +131,13 @@ exports.write_tag = function (tagid, value) {
     //If no user defined convert_from then simply returns value.
     
     var tag = getTag(tagid);
-    db.driverdb.write_item(tag.driverinfo, value);
     
+    if ( ! tag.driverinfo ) {   //This is an in memory tag
+        tag.setValue(value);
+    }
+    else {
+        db.driverdb.write_item(tag.driverinfo, value);
+    }
     return true;
 }
 
