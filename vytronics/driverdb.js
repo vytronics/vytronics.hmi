@@ -23,6 +23,7 @@ var path = require("path");
 var fs = require("fs");
 var events = require("events");
 var db = require("./db");
+var sysdriver = require("./sysdriver");
 
 exports.version = '0.0.0';
 
@@ -33,9 +34,12 @@ var drivers = {};
 var emitter = new events.EventEmitter();
 	
 //Load drivers from json file
-var load = function (json) {
+exports.load = function (json) {
     
-    var builtin = [ {id:'sim', info:{uri:'simdriver'}} ];
+    var builtin = [
+        {id:'sys', info:{uri:'sysdriver'}},
+        {id:'sim', info:{uri:'simdriver'}}
+    ];
 
     //Instantiate built in drivers
     builtin.forEach( function(drv) {        
@@ -43,9 +47,6 @@ var load = function (json) {
     });
 
     
-    if ( undefined === json ) {
-        return;
-    }
     console.log("Loadings drivers.");
     
  	for( var drvid in json ) {
@@ -68,11 +69,18 @@ var load = function (json) {
             
 			drivers[drvid] = new Driver(drvid,json[drvid]);
 		}
-	}    
-}
+	}
+    
+    //Now create driver sysObjects. TODO -maybe gotta rework the whole SysObject and sysdriver thing
+    //Awkward coupling
+    Object.getOwnPropertyNames(drivers).forEach( function(drv_id){
+        drivers[drv_id].started = sysdriver.create_sysObject('driver.' + drv_id + '.started', false);
+
+    });
+};
 
 //Link a driver item to a tag
-var subscribe = function(tagid, driverInfo) {
+exports.subscribe = function(tagid, driverInfo) {
 
 	if ( !driverInfo.id) {
 		console.log("driverdb driver missing id property:", driverInfo);
@@ -99,19 +107,16 @@ var subscribe = function(tagid, driverInfo) {
 	if(!itemsubs) driver.items[item]=[];
 	
 	driver.items[item].push(tagid);
+    
+    //Read current value of item on nextTick so subscriber gets current value initiazed
+    //TODO - perhaps expose a Driver object for driver developers that has a register item method that
+    //schedules emit itemvalue on nextTick and then calls custom drivers register method?
+    process.nextTick( function() { driver.driverObj.read_item(item); });
 	
-}
-
-//Start each driver.
-var start = function() {
-	getDrivers().forEach( function(id) {
-		console.log("Starting driver:" + id);
-		drivers[id].driverObj.start();
-	});	
-}
+};
 
 //Get list of loaded drivers as an array of driver id's.
-var getDrivers = function() {
+exports.getDrivers = function() {
 	var ids = [];
 	for( var id in drivers ) {
 		if ( drivers.hasOwnProperty(id) ) {
@@ -121,19 +126,64 @@ var getDrivers = function() {
 	return ids;
 };
 
-exports.emitter = emitter; //driverdb event emitter. TODO - why does exports.on = emitter.on not work?
-exports.load = load;
-exports.subscribe = subscribe;
-exports.start = start;
-exports.getDrivers = getDrivers;
+//Get list of loaded drivers as an array of driver info
+exports.getDriversInfo = function() {
+	var info = [];
+	for( var id in drivers ) {
+		if ( drivers.hasOwnProperty(id) ) {
+			info.push({id:id, uri:drivers[id].uri});
+		}
+	}
+	return info;
+};
 
+//Start each driver.
+exports.start = function(id) {
+    
+    if (!id) {
+        exports.getDrivers().forEach( function(id) {
+            console.log("Starting driver:" + id);
+            drivers[id].driverObj.start();
+            drivers[id].started.set_value(true);           
+        });
+    }
+    else { //Start the specified driver
+        var driver = drivers[id];
+        var started = driver.started.get_value();
+        if( driver && (!started) ){            
+            driver.driverObj.start();
+            driver.started.set_value(true); 
+        }
+    }
+    return true; //todo error codes
+};
+
+exports.stop = function(id) {
+    if (!id){
+        Object.getOwnPropertyNames(drivers).forEach( function(id) {
+            console.log("Stopping driver:" + id);
+            drivers[id].driverObj.stop();
+            drivers[id].started.set_value(false); 
+        });	
+    }
+    else{ //Start the specified driver
+        var driver = drivers[id];
+        if( driver && (driver.started.get_value()) ){
+            driver.driverObj.stop();
+            driver.started.set_value(false); 
+        }
+    }
+    return true; //todo error codes
+};
+
+exports.emitter = emitter; //driverdb event emitter. TODO - why does exports.on = emitter.on not work?
 
 exports.write_item = function(driverinfo, value) {
 
     var driver = drivers[driverinfo.id];
     
     return driver.driverObj.write_item(driverinfo.item, value);    
-}
+};
 
 //Create a driver from config info in json file
 function Driver(id,info) {
@@ -161,6 +211,7 @@ console.log('Creating driver id:'+id + ' info:',info);
 	if ( undefined === uri ) {
 		throw new Error("Driver missing 'uri' property.");
 	}
+    this.uri = uri;
 	
     //Driver module loading.
     //TODO - What kind of sanitizing is needed? Maybe none since even when hosted
@@ -182,7 +233,7 @@ console.log('Creating driver id:'+id + ' info:',info);
     //  
     //
 	this.driverObj = require(driverpath).create(info.config);
-
+    
     //Driver objects will emit "itemvalue" messages
 	this.driverObj.emitter.on("itemvalue", function(item, value) {
 		//console.log("driver id:" + id + " item:" + item + " value:" + value);
@@ -196,14 +247,12 @@ Driver.prototype.procItemValues = function(item,value) {
 	var tags = this.items[item];
 	if(!tags) {
 		console.log("Driver error. Received item change for invalid item:" + item);
+        console.log("   ",this);
 		return;
 	}
 	
 	//Tell project that a list of tags have a new value. In most cases there is just one tag
 	//but could be more if there are multiple tags that subscribe to the same driver and item (rare)
-	emitter.emit("drivervalue", this.id, item, tags, value);
+    //Item is only included for dev/debug and may be removed in future version.
+	emitter.emit("drivervalue", this.id, tags, value, item);
 }
-
-
-
-
