@@ -33,6 +33,12 @@ var vyhmi = (function (){
         parent.vy.create_tagsub(hmi_id, tagid, callback);
     }
     
+    function create_ctl_popup(elem,items) {
+        parent.vy.create_ctl_popup(elem, items);   
+    }
+    
+    
+    
     //Link a tag change to an element in the DOM
     function linktag(elem, tagid, script) {
         
@@ -116,6 +122,13 @@ var vyhmi = (function (){
     //
     function map_attr( elem, tagid, attr, values) {   
         linktag( elem, tagid, function(tag){elem.setAttribute(attr, values[tag.value])});
+    }
+
+    
+    //Convinience function to an style to an array like object
+    //See map_attr for values parameter usage
+    function poke_style( elem, tagid, stylename, values) {   
+        linktag( elem, tagid, function(tag){elem.style[stylename] = values[tag.value];});
     }
     
      
@@ -220,7 +233,9 @@ var vyhmi = (function (){
         app_call: app_call,
         scale_fit_svg: scale_fit_svg,
         map_attr: map_attr,
-        rotate: rotate
+        poke_style: poke_style,
+        rotate: rotate,
+        create_ctl_popup: create_ctl_popup
     };
 })();
 

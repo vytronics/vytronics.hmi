@@ -29,6 +29,12 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 var vy = (function () {
     
     'use strict';
+    
+    $(document).ready( function() {
+        //Needed for JQuery mobile popup
+        //Disable popups from stacking navigation history and causing page refresh.
+        $.mobile.popup.prototype.options.history = false;
+    });
 
     var socket, vyns, hmiCount, tag_subs, socket_connect_listeners;
     
@@ -376,10 +382,80 @@ var vy = (function () {
     function app_call(name, call_data, callback) {
         socket.emit("app_call", name, call_data, function(result_data, err) {
             console.log('app_call result:', result_data);
-            callback(result_data, err);
+            if (callback) callback(result_data, err);
         });
     }
-			
+    
+
+    /*================ STUFF FOR CONTROL POPUPS ======================================================
+        Uses JQuery Mobile
+    ==================================================================================================*/
+
+    /*
+    Instantiate a JQuery Mobile popup at runtime. Credits to John Chacko for the idea
+    http://johnchacko.net/?p=44
+    */
+    function create_ctl_popup(elem, items) {
+
+console.log('create_ctl_popup elem:', elem, ' items:', items);        
+        
+        function show_popup() {
+
+            //Need to do anything?
+            var popupafterclose = function () {};
+
+            var menu;
+            menu = $('<div class="ui-content messagePopup" data-role="popup" id="popupMenu" data-overlay-theme="a">').append(
+
+                $('<a data-role="button" data-theme="g" data-icon="delete" data-iconpos="notext"' +
+                    ' class="ui-btn-right closePopup">Close</a>'),
+
+                $('<ul data-role="listview" data-inset="true" style="width:180px;" data-theme="a">').append(
+                    (function (){
+                        var choices = [];
+
+                        Object.getOwnPropertyNames(items).forEach(function (item){
+
+                            var choice = $('<li><a>' + item + '</a></li>');
+                            choice.on('click', function (){
+                                try {
+                                    //Execute the function
+                                    items[item]();
+                                }
+                                catch(err){
+                                    console.log('Error in control function:' + err.message);
+                                }
+                                menu.popup('close');
+                            });
+
+                            choices.push(choice);
+
+                        });
+                        return choices;
+                    })()
+                )
+            );
+
+            $.mobile.activePage.append(menu).trigger("create");
+
+            $.mobile.activePage.find(".closePopup").bind("tap", function (e) {
+                $.mobile.activePage.find(".messagePopup").popup("close");
+            });
+
+            $.mobile.activePage.find(".messagePopup").popup().popup("open").bind({
+                popupafterclose: function () {
+                    $(this).unbind("popupafterclose").remove();
+                    popupafterclose();
+                }
+            });
+        }
+
+        //Show it on click
+        $(elem).on('click', function(){                
+            show_popup();
+        });
+    }
+        
 	//Return public members
     return {
         addConnectionListener: addConnectionListener,
@@ -387,7 +463,8 @@ var vy = (function () {
         HMI_ID: HMI_ID,
         injectScript: injectScript,  //Make this available in client
         create_tagsub: create_tagsub,
-        app_call: app_call
+        app_call: app_call,
+        create_ctl_popup: create_ctl_popup
     };
     
 })();
