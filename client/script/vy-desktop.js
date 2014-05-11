@@ -31,9 +31,13 @@ var vy = (function () {
     'use strict';
     
     $(document).ready( function() {
-        //Needed for JQuery mobile popup
-        //Disable popups from stacking navigation history and causing page refresh.
-        $.mobile.popup.prototype.options.history = false;
+        
+        //Init if jquery mobile is included
+        if ( $.mobile ) {        
+            //Needed for JQuery mobile popup
+            //Disable popups from stacking navigation history and causing page refresh.
+            $.mobile.popup.prototype.options.history = false;
+        }
     });
 
     var socket, vyns, hmiCount, tag_subs, socket_connect_listeners;
