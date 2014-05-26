@@ -30,28 +30,12 @@ var db = require('./db');
 
 exports.version = '0.0.0';
 
-//=======private utility functions ===============
-//TODO - dont think this is needed anymore.
-//Create a function that can be called by a client with a data object. The user
-//function should return a result object.
-function compileApplicationCall(code) {
-    try {
-           return new Function("data",code);
-    }
-    catch (err) {
-        console.log("Exception parsing function (" + err + "):" + code);
-    }
-    return null;
-}
-
 var tagChanged = function(id, changeData) {
 		
 	//Let clients know and they will each emit a tagchanged if they
 	//have mathcing subscriptions.
 	db.clientdb.tagChanged(id, changeData);    
 };
-
-//=============== end of private functions
 
 //Load the project.json file into db vars.
 
@@ -72,8 +56,7 @@ var load = function(projectdir) {
 
 	//TODO - unload any existing project?
 	
-	console.log("Loading project " + file);
-	console.log("Project projectdir = " + db.projectdir);
+	db.log.info("Loading project " + file);
 	try {
 
 		var content=fs.readFileSync(file, "utf8");
@@ -86,9 +69,6 @@ var load = function(projectdir) {
 		//load tagdb and create system tags
 		db.tagdb.load(json.tags);
         
-        //Load remote procedure calls database
-        db.rpcdb.load(json.rpc);
-		
         //TODO - move this to tagdb?
 		db.tagdb.emitter.on('tagChanged', function(id, data) {
 			tagChanged(id,data)});
@@ -122,8 +102,9 @@ var load = function(projectdir) {
 		db.tagdb.start();        
 	}
 	catch(err) {
-		console.log("Exception loading project. Err:" + err);
-		console.log(err.stack);
+		db.log.fatal("Exception loading project. Err:" + err);
+		db.log.fatal(err.stack);
+        process.exit(1);
 	}
 };
 
@@ -151,5 +132,5 @@ var createClient = function(socket) {
 };
 	
 //Export the public stuff
-exports.load = load;
-exports.createClient = createClient;
+module.exports.load = load;
+module.exports.createClient = createClient;

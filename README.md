@@ -59,17 +59,17 @@ Installation and Evaluation
 
 - Visit [Cloud9 IDE] and sign up for your own free cloud-based IDE.
 - Click on "Create a New Workspace" and select the "Clone from URL" option.
-- Paste the following URL into the form: https://github.com/vytronics/vytronics.hmi.git
+- Paste the following URL into the form: https://github.com/vytronics/vytronics.project.git
 - Important - Click on the "NodeJS" button and then press Create
 
-This will create a new workspace named "vytronics.hmi". It will take several minutes for the IDE to create a virtual machine. The workspace will automatically open up when completed. There will be one root folder with the same name as the project. It contains all of the source code of the core HMI which includes a default demo project. Open-Source 3rd party modules are not part of the core and are not downloaded automatically. No worries, just follow the following instruction to download, install and configure them automatically using the Node Package Manager (npm).
+This will create a new workspace named "vytronics.project". It will take several minutes for the IDE to create a virtual machine. The workspace will automatically open up when completed. If not then press the "Start Editing" button in your dashboard. There will be one root folder with the same name as the project. It contains a complete sample project. Dependent modules, which include the core vytronics.hmi module and other 3rd party open-sources, are not downloaded automatically. No worries, just follow the following instruction to download, install and configure them automatically using the Node Package Manager (npm).
 
 Click on the "Terminal" tab at the bottom left of the workspace and type the following command in the terminal window. It will take several minutes to download files and install.
 ```sh
 npm install  
 ```
 
-Believe it or not you have just created a SCADA system in the cloud. Go ahead and run the server. Double click on the file "server.js" in the root directory. Make sure server.js is the active file in the editor. Then press the green arrow-shaped button in the top menu (the run button). If all goes well the button should turn to a square red box (stop button) and you should see the following messages in the output window (first and last lines shown):
+Believe it or not you have just created a SCADA system in the cloud. Go ahead and run the application. Double click on the file "application.js" in the root directory. Make sure application.js is the active file in the editor. Then press the green arrow-shaped button in the top menu (the run button). If all goes well the button should turn to a square red box (stop button) and you should see the following messages in the output window (first and last lines shown):
 ```sh
 Your code is running at 'https://vytronicshmi-c9-<your username>.c9.io'.
 ...
@@ -77,6 +77,10 @@ HMI server listening at 127.4.119.129:8080
 ```
 
 Clicking on the link in the output window will open webpage showing the tags from the project.json file in a tabular format. The page will update in real-time to reflect the latest tag values. In the default workspace layout this will also open the page in the right side pane. Go ahead and open the link on your smart phone or in another browser window. All of the open pages should update at the same time with the same latest values.
+
+You can also install [Node.js] on your personal computer, clone the vytronics.project repository, and then run "npm install". Run the project with the command "node application" and then open a webpage at localhost:8000. This assumes you have git installed.
+
+Feeling adventurous? Modify files in the project folder to add your own HMI tags, SVG and html.
 
 
 License

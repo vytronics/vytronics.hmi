@@ -25,7 +25,6 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 var http = require('http');
 var path = require('path');
 var fs = require('fs');
-var async = require('async');
 var socketio = require('socket.io');
 var express = require('express');
 
@@ -39,8 +38,8 @@ var datadir;
 //unix style ${...} notation. For example an env like:
 //  I_have${some_env}/embedded/in/me
 //Can have multiple embedded env that will get resolved but not recursively.
-function getenv(envstr) {
-    var env = process.env[envstr];
+function getenv(envstr, default_val) {
+    var env = process.env[envstr] || default_val;
     if (typeof env != 'undefined') {
         
         var regex = /\$\{.+?\}/g;
@@ -49,85 +48,89 @@ function getenv(envstr) {
         env = env.replace(regex, function(p) {
             //remove $,{,}
             p=p.replace(regexClean,'');
-            console.log('found:' + p);
             return process.env[p];
             });
     }
     return env;
 }
 
+//Let apps access db
+module.exports.db = require('./vytronics/db');
 
-console.log("Vytronics server.js started with node versions",process.versions );
-//console.log('Process environment:', process.env);
+//Shortcut to logger object
+var log = module.exports.db.log;
 
-//Get project directory from env or default
-var projectdir = getenv('VYTRONICS_PROJDIR');
-if (!projectdir) {
-    projectdir = './project';
-    
-    //See if project.json, otherwise run demo
-	if ( ! fs.existsSync(projectdir + '/project.json') ) {
-        console.log('VYTRONICS_PROJDIR env not set and no project files in default ./project.');
-        console.log('    running demo project in ./project_demo');
-		projectdir = './project_demo';
-	}    
-    
-}
-console.log('VYTRONICS_PROJDIR:' + projectdir);
+module.exports.log = log;
 
-//Get network config. Order of precedence is:
-//  Vytronics environment vars
-//  Cloud9 hosted env vars
-//  defaults
-//
-var os_port = getenv('VYTRONICS_NODEJS_PORT') || process.env.PORT || 8000;
-var ipaddr = getenv('VYTRONICS_NODEJS_IP') || process.env.IP || "127.0.0.1";
+//Default logging level is set to WARN or let it be changed by
+//env var VYTRONICS_LOG_LEVEL at startup or by modifying the log config file at runtime
+log.setLevel(getenv('VYTRONICS_LOG_LEVEL', 'WARN'));
 
-//Resolve the project path relative to process directory
-projectdir = path.resolve(__dirname, projectdir);
+module.exports.start = function() {
+    log.info("Vytronics server.js started with node versions",process.versions );
 
-//
-// Creates a new instance of an http server with the following options:
-//  * `port` - The HTTP port to listen on. If `process.env.PORT` is set, _it overrides this value_.
-//
-var router = express();
-var server = http.createServer(router);
+    //Get project directory from env or default
+    var projectdir = getenv('VYTRONICS_PROJDIR');
+    if (!projectdir) {
+        projectdir = path.resolve(process.cwd(), './project');
+    }
+    log.info('VYTRONICS_PROJDIR set to:' + projectdir);
 
-//IO between server and clients
-var io = socketio.listen(server);
+    //Get network config. Order of precedence is:
+    //  Vytronics environment vars
+    //  Cloud9 hosted env vars
+    //  defaults
+    //
+    var os_port = getenv('VYTRONICS_NODEJS_PORT') || process.env.PORT || 8000;
+    var ipaddr = getenv('VYTRONICS_NODEJS_IP') || process.env.IP || "127.0.0.1";
 
-//To turn off debug messages
-io.set('log level', 1);
+    //Resolve the project path relative to process directory
+    projectdir = path.resolve(__dirname, projectdir);
 
-//Webserver. Root of the scripts that get included in project specific HTML
-router.use(express.static(path.resolve(__dirname,'client')));
+    //
+    // Creates a new instance of an http server with the following options:
+    //  * `port` - The HTTP port to listen on. If `process.env.PORT` is set, _it overrides this value_.
+    //
+    var router = express();
+    var server = http.createServer(router);
 
-//This is the actual client directory and takes 2nd precedence.
-router.use(express.static(path.resolve(projectdir,'hmi')));
+    //IO between server and clients
+    var io = socketio.listen(server);
 
-//Listen for client connections and create clients
-io.on('connection', function (socket) {
-    
-    //Note that there is no real utility in logging the client IP address. There
-    //Is no method to reliabily get it especially considering NAT and also that
-    //any hosted node.js server will be double proxying. Putting this note here
-    //so that nobody questions why it is not taken seriously, just FYI'd
-    
-    var addr = socket.handshake.address;
-    
-    console.log("Connection opened url:"+socket.handshake.url +
-        " address:" + addr.address + ":" + addr.port);
-    
-    //Note that query params can be extracted from
-    //socket.handshake.query.myParam if needed for the application
+    //To turn off debug messages
+    io.set('log level', 1);
 
-	//Create a new client
-	project.createClient(socket);
-});
+    //Webserver. Root of the scripts that get included in project specific HTML
+    router.use(express.static(path.resolve(__dirname,'client')));
 
-project.load(projectdir);
+    //This is the actual client directory and takes 2nd precedence.
+    router.use(express.static(path.resolve(projectdir,'hmi')));
 
-server.listen(os_port, ipaddr, function(){
-  var addr = server.address();
-  console.log("HMI server listening at", addr.address + ":" + addr.port);
-});
+    //Listen for client connections and create clients
+    io.on('connection', function (socket) {
+
+        //Note that there is no real utility in logging the client IP address. There
+        //Is no method to reliabily get it especially considering NAT and also that
+        //any hosted node.js server will be double proxying. Putting this note here
+        //so that nobody questions why it is not taken seriously, just FYI'd
+
+        var addr = socket.handshake.address;
+
+        log.info("Connection opened url:"+socket.handshake.url +
+            " address:" + addr.address + ":" + addr.port);
+
+        //Note that query params can be extracted from
+        //socket.handshake.query.myParam if needed for the application
+
+        //Create a new client
+        project.createClient(socket);
+    });
+
+    project.load(projectdir);
+
+    server.listen(os_port, ipaddr, function(){
+      var addr = server.address();
+      log.info("HMI server listening at", addr.address + ":" + addr.port);
+    });  
+};
+

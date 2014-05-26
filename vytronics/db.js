@@ -26,25 +26,28 @@ globally to other modules to avoid having awkward linkages passed around.
 
 */
 
-exports.version = "0.0.0";
+module.exports.version = "0.0.0";
 
-exports.clientdb = null;	//Database of connected HMI or other socket clients.
+module.exports.clientdb = null;	//Database of connected HMI or other socket clients.
 
-exports.tagdb = null		//Database of loaded tags.
+module.exports.tagdb = null		//Database of loaded tags.
 
-exports.driverdb = null;	//Database of loaded drivers.
+module.exports.driverdb = null;	//Database of loaded drivers.
 
-exports.rpcdb= null;	//Database of defined remote procedure calls that clients can invoke
+module.exports.rpcdb= null;	//Database of defined remote procedure calls that clients can invoke
 
-exports.projectdir = null;	//Path to project files
+module.exports.projectdir = null;	//Path to project files
 
 //Global util functions- TODO create a util vyuti module?
 
 //Util to generate globally unique IDs
-exports.GUID = function() {
+module.exports.GUID = function() {
 	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
 		function(c) {
 			var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
 			return v.toString(16);
 		});
 };	
+
+//For global logging infrastructure.
+module.exports.log = require('log4js').getLogger();

@@ -11,12 +11,7 @@ pids
 logs
 results
 
-
 node_modules/*
-!node_modules/README.txt
-
-project/*
-!project/README.txt
 
 NOTES.txt
 

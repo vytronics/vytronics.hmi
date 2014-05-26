@@ -37,8 +37,8 @@ var emitter = new events.EventEmitter();
 exports.load = function (json) {
     
     var builtin = [
-        {id:'sys', info:{uri:'sysdriver'}},
-        {id:'sim', info:{uri:'simdriver'}}
+        {id:'sys', info:{uri:'./sysdriver'}},
+        {id:'sim', info:{uri:'./simdriver'}}
     ];
 
     //Instantiate built in drivers
@@ -47,7 +47,7 @@ exports.load = function (json) {
     });
 
     
-    console.log("Loadings drivers.");
+    db.log.debug("Loadings drivers.");
     
  	for( var drvid in json ) {
 		if( json.hasOwnProperty(drvid ) ) {
@@ -56,11 +56,11 @@ exports.load = function (json) {
             var reserved = false;
             builtin.forEach( function(drv) {
                 if ( drv.info.uri === json[drvid].uri ) {
-                    console.log("driverdb.load error:" + drv.info.uri + " is loaded by default. Not loading driver:" + drvid, json[drvid]);
+                    db.log.error("driverdb.load error:" + drv.info.uri + " is loaded by default. Not loading driver:" + drvid, json[drvid]);
                     reserved=true;
                 }              
                 if ( drv.id === drvid ) {
-                    console.log("driverdb.load error:" + drvid + " is a reserved driver id. Not loading driver:" + drvid,json[drvid]);
+                    db.log.error("driverdb.load error:" + drvid + " is a reserved driver id. Not loading driver:" + drvid,json[drvid]);
                     reserved=true;
                 }
             });
@@ -83,14 +83,14 @@ exports.load = function (json) {
 exports.subscribe = function(tagid, driverInfo) {
 
 	if ( !driverInfo.id) {
-		console.log("driverdb driver missing id property:", driverInfo);
+		db.log.error("driverdb driver missing id property:", driverInfo);
 		return;
 	}
 	
 	var driverid = driverInfo.id;
 
 	if( ! drivers.hasOwnProperty(driverid) ) {
-		console.log("DriverDB no such driver ID:" + driverid);
+		db.log.error("DriverDB no such driver ID:" + driverid);
 		return;
 	}
 	
@@ -142,7 +142,7 @@ exports.start = function(id) {
     
     if (!id) {
         exports.getDrivers().forEach( function(id) {
-            console.log("Starting driver:" + id);
+            db.log.debug("Starting driver:" + id);
             drivers[id].driverObj.start();
             drivers[id].started.set_value(true);           
         });
@@ -161,7 +161,7 @@ exports.start = function(id) {
 exports.stop = function(id) {
     if (!id){
         Object.getOwnPropertyNames(drivers).forEach( function(id) {
-            console.log("Stopping driver:" + id);
+            db.log.debug("Stopping driver:" + id);
             drivers[id].driverObj.stop();
             drivers[id].started.set_value(false); 
         });	
@@ -187,7 +187,7 @@ exports.write_item = function(driverinfo, value) {
 
 //Create a driver from config info in json file
 function Driver(id,info) {
-console.log('Creating driver id:'+id + ' info:',info);
+    db.log.debug('Creating driver id:'+id + ' info:',info);
     //To capture this var in closures
 	var self = this;
 		
@@ -217,26 +217,19 @@ console.log('Creating driver id:'+id + ' info:',info);
     //TODO - What kind of sanitizing is needed? Maybe none since even when hosted
     //a project will execute in its own virtual machine. Shame on the designer
     //for loading an inappropriate module.
-	//
-    //Search priority is built in drivers, then drivers in datadir
-	//
-	//Look for built in driver then for driver included in the project.
-	var driverpath = path.resolve("./vytronics",uri + ".js");
-    console.log('looking for built-in driver:'+driverpath);
-	if ( ! fs.existsSync(driverpath) ) {
-		driverpath = path.resolve(db.projectdir,uri);
-	}
+	//Let node use the standard module search hierarchy. Note that for developing a
+    //driver set NODE_PATH env var to include the dev directory
+    
 
     //A driver module must supply a create method that returns a driver object
     //with the following properties and methods
     //TODO - document the required interface here
     //  
     //
-	this.driverObj = require(driverpath).create(info.config);
+	this.driverObj = require(uri).create(info.config);
     
     //Driver objects will emit "itemvalue" messages
 	this.driverObj.emitter.on("itemvalue", function(item, value) {
-		//console.log("driver id:" + id + " item:" + item + " value:" + value);
 		self.procItemValues(item,value);
 	});
 }
@@ -246,8 +239,7 @@ console.log('Creating driver id:'+id + ' info:',info);
 Driver.prototype.procItemValues = function(item,value) {
 	var tags = this.items[item];
 	if(!tags) {
-		console.log("Driver error. Received item change for invalid item:" + item);
-        console.log("   ",this);
+		db.log.warn("Driver id:" + this.id + " .Received item change for invalid item:" + item);
 		return;
 	}
 	

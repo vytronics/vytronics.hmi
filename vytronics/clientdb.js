@@ -32,7 +32,7 @@ var createClient = function(project, socket) {
 		clients.forEach( function(client) {
 			if(client.socket === socket) {
 				//TODO - need to clean any client stuff up?
-				console.log("client disconnected:" + client.guid);
+				db.log.info("client disconnected:" + client.guid);
 				clients.splice(clients.indexOf(client), 1);
 			}			
 		});
@@ -52,7 +52,6 @@ var tagChanged = function(tagid, changes) {
 					//TODO - custom message for each subscription based on
 					//  fields wanted
 				};
-			//console.log("client.socket.emit tagChanged tagid:"+tagid+" data:"+data);
 			client.socket.emit('tagChanged', tagid, data);
 		}
     });
@@ -68,7 +67,7 @@ function Client(socket,guid,project) {
 	this.socket = socket;
 	this.subscriptions = [];
 	
-	console.log("client logged on. GUID:" + guid);
+	db.log.info("client logged on. GUID:" + guid);
 	
 	var self = this;
 	
@@ -77,10 +76,9 @@ function Client(socket,guid,project) {
         var call_err = 0;
         var result = 0;
         try {
-            //console.log('clientdb app_call func:' + funcName);
             result = db.rpcdb.invoke(funcName, call_data);
         } catch(err) {
-            console.log('  err:' + err.message,err,err.stack);
+            db.log.error('app_call:' + err.message,err,err.stack);
             call_err = err.message;
         }
         if(!callback) return;
@@ -93,7 +91,7 @@ function Client(socket,guid,project) {
 	
     socket.on('subscribeTag', function(tagid, ackfunc) {
         
-        console.log('clientdb.subscribeTag tagid:' + tagid);
+        db.log.debug('clientdb.subscribeTag tagid:' + tagid);
 
 		//TODO - refractor this to return an object { result:, err: } where
 		//err is just a string instead of array?
@@ -147,7 +145,7 @@ Client.prototype.subscribeTag = function(tagid) {
 		return guid; //Ack the subscription.
 	}
 	else {
-		console.log("client:" + this.guid +" subscribeTag tagid:"+tagid+" not found?");
+		db.log.warn("client:" + this.guid +" subscribeTag tagid:"+tagid+" not found?");
 	}
 	
 	//TODO - real return code. Return blank guid if any errors?

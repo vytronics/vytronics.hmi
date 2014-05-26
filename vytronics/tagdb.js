@@ -59,7 +59,7 @@ var load = function (json) {
             
             //sys.* is reserved
             if (/^sys\..*/.exec(tagid)){
-                console.log('tagdb load error sys.* is a reserved tag id pattern.');
+                db.log.error('tagdb load sys.* is a reserved tag id pattern.');
                 continue;
             }
             
@@ -95,8 +95,7 @@ var start = function() {
 				}
 				catch(err){
 					//TODO - log this
-					console.log("Tag:"+tag.id+" calcVal error:" + err.message);
-					console.log(err.stack);
+					db.log.error("Tag:"+tag.id+" calcVal error:" + err.message, err.stack);
 				}
 			}, tag.calc.interval);
 		}
@@ -161,7 +160,7 @@ function Tag(tagid, json) {
 					};
 		}
 		catch (err){
-			console.log("Exception parsing function (" + err + "):" + json.calcVal);
+			db.log.error("Exception parsing function (" + err + "):" + json.calcVal);
 		}
 	}    
 }

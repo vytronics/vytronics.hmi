@@ -41,7 +41,7 @@ exports.invoke = function(call_name, call_data) {
     //Is call defined?
     var callinfo = exports.calls[call_name];
     
-    //console.log('rpcdb invoke call_name:' + call_name + ' call_data:', call_data + ' func:', callinfo.call_function);
+    db.log.debug('rpcdb invoke call_name:' + call_name + ' call_data:', call_data);
 
     //Does call exist and is it a function?        
     if( callinfo && (typeof(callinfo.call_function) === 'function')) {
@@ -59,8 +59,6 @@ exports.invoke = function(call_name, call_data) {
 //  call_data = { tagid, value }
 //
 var write_tag =  function( call_data ) {
-    //console.log('write_tag called tagid:' + call_data.tagid + ' value: ',call_data.value);
-
     db.tagdb.write_tag(call_data.tagid, call_data.value);
 
     return true;
@@ -79,13 +77,18 @@ exports.calls.pulse_tag = {
     call_function: function(call_data) {
 
         var tag = db.tagdb.getTag(call_data.tagid);
-        var last_val = tag.value;
         
-        write_tag(call_data);
+        var call_info = {
+            tagid: call_data.tagid,
+            value: call_data.values[0]
+        };
         
-        call_data.value = last_val;
+        write_tag(call_info);
 
-        setTimeout(write_tag, call_data.duration, call_data);
+        //Future - allow call_data.values to have more than 2 elements. In that case pulse through each
+        //value at duration interval
+        call_info.value = call_data.values[1];
+        setTimeout(write_tag, call_data.duration, call_info);
 
         return true;
     }
@@ -122,22 +125,3 @@ exports.calls.stop_driver = {
         return db.driverdb.stop(call_data);
     }    
 }
-
-
-//Load rpcdb from project.json section
-//  This sets some global config and may point to
-//  application specific rpc add-ons
-//  'rpcdb' : {
-//      default_permission = '*'
-//
-exports.load = function (json) {
-
-    if ( undefined === json ) {
-        return;
-    }
-    console.log("Loadings rpc calls.");
-    
-    //TODO
-}
-
-//TODO - methods to add/modify calls

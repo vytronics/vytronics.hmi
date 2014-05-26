@@ -29,10 +29,10 @@ System driver module
 */
 
 
-console.log("hello from sysdriver");
-
 var events = require("events");
 var db = require('./db');
+
+db.log.debug("Loading sysdriver module.");
 
 exports.version = "0.0.0.0";
 

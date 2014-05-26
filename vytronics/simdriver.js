@@ -51,8 +51,9 @@ Simulation driver
     See code for the token parameters specific to each of these functions.
 */
 
+var db = require("./db");
 
-console.log("hello from simdriver");
+db.log.debug("Loading simdriver.");
 
 var events = require("events");
 
@@ -215,7 +216,7 @@ SimDriver.prototype.register = function(item) {
     
     var interval = parseInt(tokens[1],10);
     if ( (!interval) || isNaN(interval) || (interval<=0)) {
-        console.log('simdriver.register interval [' + tokens[1] +
+        db.log.error('simdriver.register interval [' + tokens[1] +
                     '] must be a positive non-zero integer:' + item);
         return;
     }
@@ -226,7 +227,7 @@ SimDriver.prototype.register = function(item) {
 	//Is this a valid simulator function?
 	var builder = SIM_FUNCTIONS[funcName];
 	if( ! builder ) {
-		console.log("simdriver error. Invalid function name:"+funcName);
+		db.log.error("simdriver Invalid function name:"+funcName);
 		return;
 	}
 	
@@ -257,7 +258,7 @@ SimDriver.prototype.start = function() {
     
     var self = this;
     
-	console.log("simdriver started.");
+	db.log.debug("simdriver started.");
     
     Object.getOwnPropertyNames(this.simulators).forEach(function(prop) {
         //ForEach function passed the SimDriver object as this var
@@ -266,16 +267,14 @@ SimDriver.prototype.start = function() {
                 
         simObj.timer = setInterval( function() {            
             try {
-                //console.log('simdriver timer callback counter:' + counter + ' simObj:',simObj);
                 var newval = simObj.func.call(simObj,counter++); //Call, passing in self as this var
-                //console.log('simdriver timer callback item:' + simObj.item + ' newval:' + newval);
                 self.set_value(simObj, newval);
                 
             } catch(err){
                 //These can only be program errors and should let program crash. Catching for
                 //now during development and early releases.
-                console.log('simdriver function exception item:' + simObj.item + ' err:' + err.message);
-                console.log(err.stack);
+                db.log.fatal('simdriver function exception item:' + simObj.item + ' err:' + err.message, err.stack);
+                process.exit(1);
             }
         }, simObj.interval);
         
@@ -287,7 +286,7 @@ SimDriver.prototype.start = function() {
 
 //Driver object must define a stop method to be called by the driver database.
 SimDriver.prototype.stop = function() {
-	console.log("simdriver stopped.");	    
+	db.log.debug("simdriver stopped.");	    
 
     Object.getOwnPropertyNames(this.simulators).forEach(function(prop) {
         //ForEach function passed the SimDriver object as this var
