@@ -20,7 +20,6 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 
 var util = require("util");
 var path = require("path");
-var fs = require("fs");
 var events = require("events");
 var db = require("./db");
 var sysdriver = require("./sysdriver");
@@ -66,6 +65,14 @@ exports.load = function (json) {
             });
             
             if (reserved) continue;
+            
+            //TODO workaround - node require search path may not find drivers. It may try
+            //and look relative to the install of the vytronics.hmi module but they are
+            //really in the application package.json. So, for non built in
+            //drivers look for and expect these in the exe's node_module folder
+            json[drvid].uri = path.resolve(process.cwd(),'node_modules',json[drvid].uri);
+            
+            db.log.debug("Resolving custom driver to path " + json[drvid].uri);
             
 			drivers[drvid] = new Driver(drvid,json[drvid]);
 		}
@@ -229,7 +236,7 @@ function Driver(id,info) {
 	this.driverObj = require(uri).create(info.config);
     
     //Driver objects will emit "itemvalue" messages
-	this.driverObj.emitter.on("itemvalue", function(item, value) {
+	this.driverObj.on("itemvalue", function(item, value) {
 		self.procItemValues(item,value);
 	});
 }
