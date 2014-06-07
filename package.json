@@ -1,6 +1,6 @@
 {
     "name": "vytronics.hmi",
-    "version": "0.0.5",
+    "version": "0.0.7",
     "description": "Vytronics HMI server. Core components Vytronics HMI - The 100% Free, Open-Source, SCADA/HMI Initiative",
     "keywords": ["SCADA", "HMI", "DCS", "industrial controls", "LCP",
                  "Local Control Panel", "Vytronics"],
@@ -9,7 +9,7 @@
         "email" : "support@vytronics.com",
         "url" : "http://www.vytronics.com/"
     },
-    "homepage": "www.vytonics.com",
+    "homepage": "www.vytronics.com",
     "license": "AGPL-3.0",
     "main": "./server.js",
     "repository": {
