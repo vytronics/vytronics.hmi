@@ -9,11 +9,6 @@ See Installation and Evaluation section below for instructions on how to setup a
 [Click here for live demo!]
 
 ---
-Vytronics.HMI is donated to the community by the author, Chuck Weissman, founder of [www.vytronics.com], to enable and encourage the deployment of Internet-Enabled supervisory and control for everything from consumer appliances to factory automation in the support of the founder's vision:
-
-> ... to reduce every man and woman's carbon footprint through the elimination of unnecessary energy consumption in the performance of tasks that can be securely and effectively accomplished remotely.
-
----
 
 Vytronics.HMI aims to be the world's fastest growing and most popular Open-Source SCADA/HMI. It is the first and (at the time of initial publishing) the only system that supports all of the following capabilities:
 - Use Javascript, the world's most popular programming language, for client and server side scripting to make the easy things easy and the hard things possible.
@@ -24,10 +19,8 @@ Vytronics.HMI aims to be the world's fastest growing and most popular Open-Sourc
 - Integrate seamlessly with git on github or your private repository for powerful version control.
 
 
-Version
+Experimental Community Preview
 ----
-
-0.0.0 - Community Preview
 
 This community preview (herein referred to as the "CP") is the first publishing milestone in the Vytronics.HMI development roadmap. The purpose of the CP is to make source code and development tools available to the public in the shortest time possibe in order to:
 - Generate interest
