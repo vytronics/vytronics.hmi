@@ -34,13 +34,15 @@ var db = require('./db');
 
 db.log.debug("Loading sysdriver module.");
 
-exports.version = "0.0.0.0";
+module.exports.version = "0.0.0.0";
 
 var sys_items = {};
 
+var emitter = new events.EventEmitter();
+
 //sysdriver is a singleton
 var sysdriver = {
-    emitter: new events.EventEmitter(),
+    on: function (type, listener){ emitter.on(type, listener); },
     register: function(item) {
         //Don't think need to do anything. SysObj ctor already adds to sys_items obj.
     },
@@ -63,12 +65,12 @@ var sysdriver = {
 
 //All drivers must export a create function that returns a conforming
 //driver object
-exports.create = function() {
+module.exports.create = function() {
     return sysdriver;
 };
 
 //Method to enable the core app to create SysObject's
-exports.create_sysObject = function(name, defaultValue) {
+module.exports.create_sysObject = function(name, defaultValue) {
     
     var sysobj = new SysObject(name, defaultValue);
             
@@ -107,7 +109,7 @@ function SysObject (name, defaultValue){ //TODO - encapsulate and protect better
 SysObject.prototype.set_value = function (newval){
     this.value = newval;
     
-    sysdriver.emitter.emit("itemvalue", this.tagid, this.value);				
+    emitter.emit("itemvalue", this.tagid, this.value);				
     
 };
 

@@ -198,6 +198,13 @@ function SimDriver() {
 	return this;
 }
 
+//Driver is an emitter than must define on method
+SimDriver.prototype.on = function (type, listener){
+    this.emitter.on(type, listener);
+}
+    
+    
+
 //Driver must define a read_item method that provides the current value
 SimDriver.prototype.read_item = function (item){
     var obj = this.simulators[item];
