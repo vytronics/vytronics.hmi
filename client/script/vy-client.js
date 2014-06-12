@@ -44,7 +44,7 @@ var vyhmi = (function (){
         
         var func;
 
-        console.log("vyhmi.linktag called elem:" + elem + " tagid:" + tagid + " script:" + script);
+        //console.log("vyhmi.linktag called elem:" + elem + " tagid:" + tagid + " script:" + script);
         
         //If script obj is a function then use it as is. Of course, the function must be of form
         // function(tag, elem){} or it will not do much :)

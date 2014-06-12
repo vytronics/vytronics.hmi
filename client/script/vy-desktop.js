@@ -101,7 +101,7 @@ var vy = (function () {
     //  guid - server assigned global uid
     //
 	function subscribe(sub) {
-		console.log('subscribe hmi_id:' + sub.hmi_id + ' tagid:' + sub.tagid);
+		
 		//TODO - if server never responds then guid will also be undefined,
 		//Unsubscribe methods should purge undefined guids also.
                      
@@ -115,7 +115,7 @@ var vy = (function () {
                 }
                 //Store the subscription GUID handle returned from the server	
                 sub.guid = result;
-                console.log('subscribed to tag:', sub);
+                console.log('subscribe hmi_id:' + sub.hmi_id + ' tagid:' + sub.tagid + ' guid:' + sub.guid);
             });
         }
         else {
@@ -125,7 +125,7 @@ var vy = (function () {
     
 	//Unlink callback and tell server to unsubscribe
 	function unsubscribe(sub) {
-		console.log('unsubscribe tagid:' + sub.tagid );
+		console.log('unsubscribe hmi_id:' + sub.hmi_id + ' tagid:' + sub.tagid + ' guid:' + sub.guid);
         
         //TODO - need to check for connected first?
 
@@ -237,7 +237,7 @@ var vy = (function () {
                 //First try svg custom attribute then html
                 instrumentStr = $(this).attr('vy:instrument') || $(this).attr('data-vy-instrument');
 
-                console.log("instrumentDocument doc instrumentStr:" + instrumentStr);
+                //console.log("instrumentDocument doc instrumentStr:" + instrumentStr);
 
                 //Evaluate the instrumentation string in the global scope of hosting iframe
                 //(NOTE: NOT in the global scope of the desktop window!!!)
@@ -385,7 +385,7 @@ var vy = (function () {
     //Execute a remote function call on the server and invoke callback(result_data, err) when complete
     function app_call(name, call_data, callback) {
         socket.emit("app_call", name, call_data, function(result_data, err) {
-            console.log('app_call result:', result_data);
+            //console.log('app_call result:', result_data);
             if (callback) callback(result_data, err);
         });
     }
