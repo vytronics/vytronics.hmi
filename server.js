@@ -24,7 +24,6 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 
 var http = require('http');
 var path = require('path');
-var fs = require('fs');
 var socketio = require('socket.io');
 var express = require('express');
 
