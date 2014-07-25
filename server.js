@@ -27,31 +27,12 @@ var path = require('path');
 var socketio = require('socket.io');
 var express = require('express');
 
+var vyutil = require('./vytronics/vyutil');
 var project = require('./vytronics/project');
 
 var self = this;
 
 var datadir;
-
-//Function for getting env vars that might be indirect delimited by
-//unix style ${...} notation. For example an env like:
-//  I_have${some_env}/embedded/in/me
-//Can have multiple embedded env that will get resolved but not recursively.
-function getenv(envstr, default_val) {
-    var env = process.env[envstr] || default_val;
-    if (typeof env != 'undefined') {
-        
-        var regex = /\$\{.+?\}/g;
-        var regexClean = /[{,},$]/g;
-
-        env = env.replace(regex, function(p) {
-            //remove $,{,}
-            p=p.replace(regexClean,'');
-            return process.env[p];
-            });
-    }
-    return env;
-}
 
 //Let apps access db
 module.exports.db = require('./vytronics/db');
@@ -63,13 +44,13 @@ module.exports.log = log;
 
 //Default logging level is set to WARN or let it be changed by
 //env var VYTRONICS_LOG_LEVEL at startup or by modifying the log config file at runtime
-log.setLevel(getenv('VYTRONICS_LOG_LEVEL', 'WARN'));
+log.setLevel(vyutil.getenv('VYTRONICS_LOG_LEVEL', 'WARN'));
 
 module.exports.start = function() {
     log.info("Vytronics server.js started with node versions",process.versions );
 
     //Get project directory from env or default
-    var projectdir = getenv('VYTRONICS_PROJDIR');
+    var projectdir = vyutil.getenv('VYTRONICS_PROJDIR');
     if (!projectdir) {
         projectdir = path.resolve(process.cwd(), './project');
     }
@@ -80,8 +61,8 @@ module.exports.start = function() {
     //  Cloud9 hosted env vars
     //  defaults
     //
-    var os_port = getenv('VYTRONICS_NODEJS_PORT') || process.env.PORT || 8000;
-    var ipaddr = getenv('VYTRONICS_NODEJS_IP') || process.env.IP || "127.0.0.1";
+    var os_port = vyutil.getenv('VYTRONICS_NODEJS_PORT') || process.env.PORT || 8000;
+    var ipaddr = vyutil.getenv('VYTRONICS_NODEJS_IP') || process.env.IP || "127.0.0.1";
 
     //Resolve the project path relative to process directory
     projectdir = path.resolve(__dirname, projectdir);

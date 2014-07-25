@@ -24,68 +24,13 @@ Project module
 Loads project.yml file to define the db module global vars.
 
 */
-var fs = require('fs');
 var path = require('path');
 
+var vy_yaml = require('./vy.yaml');
 var db = require('./db');
 
 exports.version = '0.0.0';
 
-
-var YamlLoader = (function(){
-    var yaml = require('js-yaml');
-
-    //Allow a custom type to load/compile zero argument function bodies that just need to
-    //mess with the this var and optionally return a result
-    var objFunctionYamlType = new yaml.Type('tag:yaml.org,2002:vy/objfunc', {
-        loadKind: 'scalar',
-        loadResolver: function (state){
-            state.result = new Function(state.result);
-           
-            if (typeof(state.result) == "function") {
-                return true;
-            }
-                return false;
-        },
-        dumpPredicate: function (object){
-            return '[object Function]' === Object.prototype.toString.call(object);
-        },
-        dumpRepresenter: function(object) { return object.toString(); }
-    });
-
-    //Allow a custom type to load/compile a function accepting a single parameter 'raw'
-    //with body that returns a value based on it.
-    var scaleFunctionYamlType = new yaml.Type('tag:yaml.org,2002:vy/scale', {
-        loadKind: 'scalar',
-        loadResolver: function (state){      
-            state.result = new Function( 'raw', 'return ' + state.result + ';');
-            if (typeof(state.result) == "function") {
-                return true;
-            }
-            return false;
-        },
-        dumpPredicate: function (object){
-            return '[object Function]' === Object.prototype.toString.call(object);
-        },
-        dumpRepresenter: function(object) { return object.toString(); }
-    });
-
-    //Define the custom Vytronics "vy" yaml schema namespace
-    var VY_SCHEMA = yaml.Schema.create([ objFunctionYamlType, scaleFunctionYamlType ]);
-
-    return {
-        load: function(full_filepath, callback) {
-            fs.readFile(full_filepath, 'utf8', function (error, data) {
-                var json = undefined;
-                
-                if (!error) {
-                    json = yaml.load(data, { schema: VY_SCHEMA });                    
-                }                 
-                callback(error, json);
-            });
-        }
-    };
-})(); //TODO- move to a module
 
 var tagChanged = function(id, changeData) {
 		
@@ -116,9 +61,9 @@ var load = function(projectdir) {
 	db.log.info("Loading project " + file);
 	try {
 
-		var content=fs.readFileSync(file, "utf8");
+		//var content=fs.readFileSync(file, "utf8");
 		
-        YamlLoader.load(file, function (error, json){
+        vy_yaml.load(file, function (error, json){
             
             if (error) {
                 db.log.error('error loading project.yaml - ' + error.stack || error.message || 
