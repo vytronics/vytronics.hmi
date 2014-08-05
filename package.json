@@ -1,6 +1,6 @@
 {
     "name": "vytronics.hmi",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "description": "Vytronics HMI server. Core components Vytronics HMI - The 100% Free, Open-Source, SCADA/HMI Initiative",
     "keywords": ["SCADA", "HMI", "DCS", "industrial controls", "LCP",
                  "Local Control Panel", "Vytronics"],

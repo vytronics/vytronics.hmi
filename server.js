@@ -96,6 +96,10 @@ module.exports.start = function() {
 
         var addr = socket.handshake.address;
 
+        //Always send this to the console
+        console.log("Connection opened url:"+socket.handshake.url +
+            " address:" + addr.address + ":" + addr.port);
+        
         log.info("Connection opened url:"+socket.handshake.url +
             " address:" + addr.address + ":" + addr.port);
 

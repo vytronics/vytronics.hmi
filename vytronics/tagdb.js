@@ -147,21 +147,16 @@ exports.write_tag = function (tagid, value) {
 function Tag(tagid, json) {
 	
 	this.id = tagid;
-	this.calcVal = null;
 	this.value = json.defaultValue;
 	this.driverinfo = json.driverinfo;
 	
 	//Set up any periodic calcs
 	if( json.calcVal !== undefined ) {
 		
-		try {
-			this.calc ={ interval:json.calcVal.interval, //TODO - test isNaN
-						func:new Function(json.calcVal.func)
-					};
-		}
-		catch (err){
-			db.log.error("Exception parsing function (" + err + "):" + json.calcVal);
-		}
+        this.calc ={ interval:json.calcVal.interval, //TODO - test isNaN
+                    func:json.calcVal.func
+                };
+		
 	}    
 }
 
