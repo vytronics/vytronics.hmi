@@ -171,11 +171,13 @@ SIM_FUNCTIONS["randomDelta"] = {
 		},
 	func:function(counter) {
         //counter not used
-		var r = getRandomInt(-1*this.delta, this.delta);		
-		if ( (this.value + r)  > this.max) r = 0;
-		else if ( (this.value+r) < this.min) r=0;
+		var r = getRandomInt(-1*this.delta, this.delta);
+        var newval = +this.value +r;
+        if ( isNaN(newval) ) newval = 0;
+		if ( (newval)  > this.max) newval=this.max;
+		else if ( (newval) < this.min) newval=this.min;
               
-		return this.value + r;
+		return newval;
 	}
 };
 
@@ -253,7 +255,7 @@ SimDriver.prototype.set_value = function(simObj, value) {
 
     var oldval = simObj.value;
     
-    if ( value != oldval) {
+    if ( value !== oldval) {
         simObj.value = value;
         this.emitter.emit("itemvalue", simObj.item, simObj.value);				
     }
