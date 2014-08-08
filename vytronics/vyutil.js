@@ -31,6 +31,17 @@ module.exports.isDefined = function (obj){
     return typeof obj != 'undefined';
 };
 
+//Test if object is a function
+var isFunction = function (obj){
+    return typeof(obj) === 'function';
+}
+module.exports.isFunction = isFunction;
+
+//Test if object is a string
+var isString = function (obj){
+    return (typeof myVar == 'string' || myVar instanceof String);
+};
+module.exports.isString = isString;
 
 //Function for getting env vars that might be indirect delimited by
 //unix style ${...} notation. For example an env like:
