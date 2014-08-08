@@ -35,7 +35,7 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 //      { value: <new value>, stateText:<some text> }
 //
 
-var util = require("util");
+var vyutil = require("./vyutil");
 var events = require("events");
 var db = require("./db");
 
@@ -47,6 +47,17 @@ var emitter = new events.EventEmitter();
 var globals = {};
 
 var tags = {};
+
+var TAG_TYPES = {
+    DISCRETE: 'discrete',
+    ANALOG: 'analog',
+    UNTYPED: 'untyped',
+    OBJECT: 'object'
+};
+exports.get_tag_types = function (){
+    //make immutable by returning a copy
+    return TAG_TYPES.slice();
+}
 
 //Load tags from json file
 var load = function (json) {
@@ -122,19 +133,20 @@ exports.emitter = emitter;
 exports.getTags = getTags;
 exports.getTag = getTag;
 
-//Ask driver to write a value to this tagid
+//Ask driver to write a value to this tagid. This is typically called from a client
+//GUI and value may need to be coerced according to tag.value_info
 //
-exports.write_tag = function (tagid, value) {
-    
-    //TODO - for this and for pulse need to use a convert_from method
-    //If no user defined convert_from then simply returns value.
+exports.write_tag_request = function (tagid, value) {
     
     var tag = getTag(tagid);
     
     if ( ! tag.driverinfo ) {   //This is an in memory tag
+        //setValue will take care of coercion.
         tag.setValue(value);
     }
     else {
+        //Coerce value if necessary
+        value = tag.coerce_value(value);
         db.driverdb.write_item(tag.driverinfo, value);
     }
     return true;
@@ -149,7 +161,36 @@ function Tag(tagid, json) {
 	this.id = tagid;
 	this.value = json.defaultValue;
 	this.driverinfo = json.driverinfo;
-	
+    
+    //The value_info object gives tags their personality. Provides the information for converting raw
+    //telemetered values to the desired engineering values (or discrete states) and visa versa. Also
+    //associcates alarm priority as desired. If no convert object defined then no conversion is performed
+    //from or to telemetry value. May change in the future to use default value as a hint.
+    //
+    //  For discrete tags...
+    //  value_info: {
+    //      type: "discrete",
+    //      map: [  { value: 0, state: "NORMAL", almprior: 0 },
+    //              { value: 1, state: "ALARM", almprior: 3 } ],
+    //      comment: "can put a string here for GUIs"
+    //  }
+    //
+    //  For analog tags...
+    //  value_info: {
+    //      type: "analog",
+    //      to: !!js/function "function(value) { return value*10 - 3; }",
+    //      from: !!js/function "function(volts) { return (volts + 3) / 10; }",
+    //      min: -30,
+    //      max: 100,
+    //      //Need something for alarms TODO
+    //      comment: "can put a string here for guis"
+    //  }
+    //          
+    //
+    //  TODO - validate
+    this.value_info = json.value_info;
+    
+    
 	//Set up any periodic calcs
 	if( json.calcVal !== undefined ) {
 		
@@ -161,19 +202,170 @@ function Tag(tagid, json) {
 }
 
 //Set the tag value and send notifications
+//If tag.value_info object is defined then this info is used to value_info
+//  to/from raw telemetry value. Otherwise try to coerce to number.
+//  
+//  value is the raw telemetry value
+//
+//  Precondition - tag.value_info has been validated when DB was loaded
+//
 Tag.prototype.setValue = function(value) {
 
-	if(this.value===value) return;
+    //TODO - should function check for no change in value
+    //and if so exit with no action?
+    
+    if ( ! vyutil.isDefined(this.value_info) || (this.value_info.type === TAG_TYPES.UNTYPED)) {
+        //Attempt to coerce to number
+        var tagval = +value;
+        tagval = isNaN(tagval) ? value : tagval;
+        this.value = tagval;
+    }
+    else if (this.value_info.type === TAG_TYPES.OBJECT) {
+        db.log.warn('TODO - implement analog tag types.');
+        //Coerce JSON strings to objects?
+        this.value = value;
+    }
+    else if (this.value_info.type === TAG_TYPES.DISCRETE){
+        var map = this.value_info.map;
+        var mapval = undefined;
+        for (var i=0; i<map.length; i++){
+            if (map[i].value === value){
+                mapval = map[i].state;
+                break;
+            }
+        }
+        
+        if ( ! vyutil.isDefined(mapval) ){
+            db.log.error('attempt to set invalid value [' + value + '] for tag ' + this.id);
+            return;
+        }
+        else {
+            this.value = mapval;
+        }
+    }
+    else if (this.value_info.type === TAG_TYPES.ANALOG){
+        db.log.warn('TODO - implement analog tag types.');
+        this.value = +value;
+    }
 
-	this.value = value;
-	
-	//TODO - Need to save a copy of the tag data
-	//and call state calcs then send differences here
-	//Always send id
-	var data = { id: this.id, value: this.value };
-	
-	//TODO - awkward? Better coupling/decoupling needed?
-	//Emitter is the tagdb emitter.
+    var data = {
+        //TODO - pass other properties such as quality, alarm priority etc.
+        id: this.id,
+        value: this.value
+    };
 	emitter.emit("tagChanged", this.id, data);
-}
+};
 
+//Utility function which will coerce a value according to the tag value_info
+//object. Not to be confused with coercing/converting to/from telemetry data.
+//This function only deals with making sure the value is compatible with the
+//tag.value expected type. For example, if value type is object then will try
+//and coerce a JSON string into an object. If value type is analog then will try
+//and coerce a string to number.
+//TODO - validate value is within expected range
+//
+Tag.prototype.coerce_value = function (value){
+  
+    if ( ! vyutil.isDefined(this.value_info) || (this.value_info.type === TAG_TYPES.UNTYPED)) {
+        //Attempt to coerce to number
+        var tagval = +value;
+        tagval = isNaN(tagval) ? value : tagval;
+        return tagval;
+    }
+    else if (this.value_info.type === TAG_TYPES.OBJECT) {
+        //If string try to coerce from JSON
+        if (vyutil.isString(value)){
+            try {
+                return JSON.parse(value);
+            } catch(err) {
+                //Let value just be the string
+                return value;
+            } 
+        }
+        else {
+            return value;
+        }
+    }
+    else if (this.value_info.type === TAG_TYPES.DISCRETE){
+        //TODO - validate. For now just pass back the value
+        return value;
+    }
+    else if (this.value_info.type === TAG_TYPES.ANALOG){
+        db.log.warn('TODO - implement analog tag types.');
+        return +value;
+    }
+    else {
+        db.log.warn('tag.coerce_value programmer error tag:' + this.id + '?');
+    }
+
+};
+
+
+/*
+Get an object with info on valid values for the tag. All
+return object include a "hint" field that can be used in GUI's
+
+    For discretes: {
+        type: "discrete",
+        states: [] - array of valid state strings
+        comment: string for GUIs
+    }
+    
+    For analog: {
+        type: "analog",
+        min:    min reasonability limit
+        max:    max reasonability limit
+        comment: string for GUIs
+    }
+    
+    For object type: {
+        type: "object",
+        comment: string for GUIs
+    }
+    
+    For tags with no value_info object: {
+        type: 'untyped',
+        comment: - will be a system generated string
+        "Untyped. Attempt will be made too coerce telemetry values to numbers."
+    }
+
+*/
+Tag.prototype.get_value_info = function (){
+    if ( ! vyutil.isDefined(this.value_info) ) {
+        return {
+            type: TAG_TYPES.UNTYPED,
+            comment: "Untyped tag. Attempt will be made to coerce telemetry values to numbers."
+        };
+    }
+    else if (this.value_info.type === TAG_TYPES.UNTYPED){
+        return {
+            type: TAG_TYPES.UNTYPED,
+            comment: this.value_info.comment || "Untyped tag. Attempt will be made to coerce telemetry values to numbers."
+        };
+    }
+    else if (this.value_info.type === TAG_TYPES.DISCRETE){
+        var map = this.value_info.map;
+        var states = [];
+        this.value_info.map.forEach( function (mapi){
+            console.log('####mapi', mapi);
+            states.push(mapi.state);
+        });
+        
+        return {
+            comment: this.value_info.comment || "discrete tag type",
+            states: states
+        };
+    }
+    else if (this.value_info.type === TAG_TYPES.ANALOG){
+        return {
+            min: this.value_info.min,
+            max: this.value_info.max,
+            comment: this.value_info.comment || "analog tag type"
+        };
+    }
+    else if (this.value_info.type === TAG_TYPES.OBJECT){
+        return {
+            comment: this.value_info.comment || "object tag type"
+        };
+    }
+};
