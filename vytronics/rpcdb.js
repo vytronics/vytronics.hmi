@@ -54,17 +54,27 @@ exports.invoke = function(call_name, call_data) {
 }
 
 //Add the core calls =====================================================================
+//
+
+
 
 //Write a tag value to driver
 //  call_data = { tagid, value }
 //
-var write_tag =  function( call_data ) {
-    db.tagdb.write_tag(call_data.tagid, call_data.value);
+//This is typically called from the client gui to request that the
+//value for a tag be written to the driver. The value is in engineering
+//units (or discrete states) for the tag and will need to be converted
+//to telemetry value.
+//
+//
+var write_tag_request =  function( call_data ) {
+    db.tagdb.write_tag_request(call_data.tagid, call_data.value);
 
+    //TODO - return value errors
     return true;
 };
-exports.calls.write_tag = {
-    call_function: write_tag
+exports.calls.write_tag_request = {
+    call_function: write_tag_request
 };
 
 //Ask driver to pulse a tag value
@@ -73,7 +83,7 @@ exports.calls.write_tag = {
 //      value:  //value to write
 //      duration:   //for this many milliseconds, then write prev value
 //
-exports.calls.pulse_tag = {
+exports.calls.pulse_tag_request = {
     call_function: function(call_data) {
 
         var tag = db.tagdb.getTag(call_data.tagid);
@@ -83,12 +93,12 @@ exports.calls.pulse_tag = {
             value: call_data.values[0]
         };
         
-        write_tag(call_info);
+        write_tag_request(call_info);
 
         //Future - allow call_data.values to have more than 2 elements. In that case pulse through each
         //value at duration interval
         call_info.value = call_data.values[1];
-        setTimeout(write_tag, call_data.duration, call_info);
+        setTimeout(write_tag_request, call_data.duration, call_info);
 
         return true;
     }
@@ -113,6 +123,19 @@ exports.calls.query_driver_info = {
         return db.driverdb.getDriversInfo();
     }
 };
+
+//Query a tags valid value info
+exports.calls.query_tag_value_info = {
+    call_function: function(call_data) {
+        var tag = db.tagdb.getTag(call_data.id);
+        if (!tag) {
+            return null;
+        }
+        
+        return tag.get_value_info();
+    }
+};
+
 
 exports.calls.start_driver = {
     call_function: function(call_data) {
