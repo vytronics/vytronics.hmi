@@ -96,12 +96,12 @@ development and testing.
       buttons: {
         Write: function() {
             var dialog = $(this);            
-            vy.app_call('write_tag', {tagid:tagid.val(), value:value.val()}, function(data,err){            
+            vy.app_call('write_tag_request', {tagid:tagid.val(), value:value.val()}, function(data,err){            
                 dialog.dialog("close");
             });
          },
         Apply: function() {
-            vy.app_call('write_tag', {tagid:tagid.val(), value:value.val()}, function(data,err){                
+            vy.app_call('write_tag_request', {tagid:tagid.val(), value:value.val()}, function(data,err){                
             });
          },
         Cancel: function() {
