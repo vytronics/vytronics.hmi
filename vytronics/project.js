@@ -27,6 +27,7 @@ Loads project.yml file to define the db module global vars.
 var path = require('path');
 
 var vy_yaml = require('./vy.yaml');
+var vyutil = require('./vyutil');
 var db = require('./db');
 
 exports.version = '0.0.0';
@@ -41,6 +42,8 @@ var tagChanged = function(id, changeData) {
 
 //Load the project.yml file into db vars.
 
+db.serverdb = require('./serverdb');
+
 db.tagdb = require('./tagdb');
 
 db.driverdb = require('./driverdb');
@@ -50,8 +53,9 @@ db.clientdb = require('./clientdb');
 db.rpcdb = require('./rpcdb');
 
 
+
 //Load the project from json file
-var load = function(projectdir) {
+var load = function(projectdir, callback) {
 
     db.projectdir = path.resolve(__dirname,projectdir);
     var file = path.resolve(db.projectdir, "./project.yml");
@@ -61,53 +65,62 @@ var load = function(projectdir) {
 	db.log.info("Loading project " + file);
 	try {
 
-		//var content=fs.readFileSync(file, "utf8");
+		var err = undefined;
 		
         vy_yaml.load(file, function (error, json){
             
             if (error) {
                 db.log.error('error loading project.yaml - ' + error.stack || error.message || 
                              String(error));
-                return undefined;
+                err = err.message;
             }
+            else {
+            
+                //load server vars
+                db.serverdb.load(json.server);
 
-            //load driverdb
-            db.driverdb.load(json.drivers, db.projectdir);
+                //load driverdb
+                db.driverdb.load(json.drivers, db.projectdir);
 
-            //load tagdb and create system tags
-            db.tagdb.load(json.tags);
+                //load tagdb and create system tags
+                db.tagdb.load(json.tags);
 
-            //TODO - move this to tagdb?
-            db.tagdb.emitter.on('tagChanged', function(id, data) {
-                tagChanged(id,data)});
+                //TODO - move this to tagdb?
+                db.tagdb.emitter.on('tagChanged', function(id, data) {
+                    tagChanged(id,data)});
 
-            //Link up drivers
-            var tags = db.tagdb.getTags();
-            tags.forEach( function(tid) {
-                var tag = db.tagdb.getTag(tid);
+                //Link up drivers
+                var tags = db.tagdb.getTags();
+                tags.forEach( function(tid) {
+                    var tag = db.tagdb.getTag(tid);
 
-                if(tag.driverinfo) {
-                    db.driverdb.subscribe(tag.id, tag.driverinfo);
-                }
+                    if(tag.driverinfo) {
+                        db.driverdb.subscribe(tag.id, tag.driverinfo);
+                    }
 
-                //Otherwise this is an in memory tag
+                    //Otherwise this is an in memory tag
 
-            });
-
-            //Start drivers
-            db.driverdb.emitter.on("drivervalue", function(driverid, tags, value, item) {
-                //Note that item param is not really needed. Just included for debug and
-                //may get rid of it all together
-                tags.forEach( function(tagid) {
-                    var tag = db.tagdb.getTag(tagid);
-                    tag.setValue(value);
                 });
-            });
-            db.driverdb.start();
 
-            //Kick off any periodic calculations
-            //TODO - call tagdb method?
-            db.tagdb.start();        
+                //Start drivers
+                db.driverdb.emitter.on("drivervalue", function(driverid, tags, value, item) {
+                    //Note that item param is not really needed. Just included for debug and
+                    //may get rid of it all together
+                    tags.forEach( function(tagid) {
+                        var tag = db.tagdb.getTag(tagid);
+                        tag.setValue(value);
+                    });
+                });
+                db.driverdb.start();
+
+                //Kick off any periodic calculations
+                //TODO - call tagdb method?
+                db.tagdb.start();
+            }
+            
+            if (vyutil.isFunction(callback)){
+                callback(err);
+            }
 	   });
     }
 	catch(err) {
