@@ -35,7 +35,8 @@ var self = this;
 var datadir;
 
 //Let apps access db
-module.exports.db = require('./vytronics/db');
+var db = require('./vytronics/db');
+module.exports.db = db;
 
 //Shortcut to logger object
 var log = module.exports.db.log;
@@ -55,14 +56,6 @@ module.exports.start = function() {
         projectdir = path.resolve(process.cwd(), './project');
     }
     log.info('VYTRONICS_PROJDIR set to:' + projectdir);
-
-    //Get network config. Order of precedence is:
-    //  Vytronics environment vars
-    //  Cloud9 hosted env vars
-    //  defaults
-    //
-    var os_port = vyutil.getenv('VYTRONICS_NODEJS_PORT') || process.env.PORT || 8000;
-    var ipaddr = vyutil.getenv('VYTRONICS_NODEJS_IP') || process.env.IP || "127.0.0.1";
 
     //Resolve the project path relative to process directory
     projectdir = path.resolve(__dirname, projectdir);
@@ -110,11 +103,20 @@ module.exports.start = function() {
         project.createClient(socket);
     });
 
-    project.load(projectdir);
+    project.load(projectdir, function(err) {
+    
+        if (err){
+            log.error('error loading project.yml - ' + err);
+        }
+        else {
+    
+            console.log('##### db.serverdb:',db.serverdb);
 
-    server.listen(os_port, ipaddr, function(){
-      var addr = server.address();
-      log.info("HMI server listening at", addr.address + ":" + addr.port);
-    });  
+            server.listen(db.serverdb.listen_port, db.serverdb.listen_ip, function(){
+              var addr = server.address();
+              log.info("HMI server listening at", addr.address + ":" + addr.port);
+            });
+        }
+    });
 };
 
