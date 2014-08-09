@@ -134,18 +134,20 @@ exports.getTags = getTags;
 exports.getTag = getTag;
 
 //Ask driver to write a value to this tagid. This is typically called from a client
-//GUI and value may need to be coerced according to tag.value_info
+//GUI and value may need to be coerced according to tag.value_info to expected telemetry
+//value
 //
 exports.write_tag_request = function (tagid, value) {
     
     var tag = getTag(tagid);
     
+    //TODO - also just do memory write if driver is stopped?
     if ( ! tag.driverinfo ) {   //This is an in memory tag
         //setValue will take care of coercion.
         tag.setValue(value);
     }
     else {
-        //Coerce value if necessary
+        //Coerce value if necessary to telemetry value
         value = tag.coerce_value(value);
         db.driverdb.write_item(tag.driverinfo, value);
     }
@@ -256,13 +258,7 @@ Tag.prototype.setValue = function(value) {
 	emitter.emit("tagChanged", this.id, data);
 };
 
-//Utility function which will coerce a value according to the tag value_info
-//object. Not to be confused with coercing/converting to/from telemetry data.
-//This function only deals with making sure the value is compatible with the
-//tag.value expected type. For example, if value type is object then will try
-//and coerce a JSON string into an object. If value type is analog then will try
-//and coerce a string to number.
-//TODO - validate value is within expected range
+//Coerce to and return telemetry value
 //
 Tag.prototype.coerce_value = function (value){
   
@@ -273,6 +269,8 @@ Tag.prototype.coerce_value = function (value){
         return tagval;
     }
     else if (this.value_info.type === TAG_TYPES.OBJECT) {
+        //TODO - this is wrong. Driver should expect a JSON string or plain string
+        //The logic below would be needed for in memory tags. Think about it.
         //If string try to coerce from JSON
         if (vyutil.isString(value)){
             try {
@@ -287,8 +285,22 @@ Tag.prototype.coerce_value = function (value){
         }
     }
     else if (this.value_info.type === TAG_TYPES.DISCRETE){
-        //TODO - validate. For now just pass back the value
-        return value;
+        //Reverse lookup from state string to value
+        var map = this.value_info.map;
+        var telemval = undefined;
+        for (var i=0; i<map.length; i++){
+            if (map[i].state === value){
+                telemval = map[i].value;
+                break;
+            }
+        }
+        if ( ! vyutil.isDefined(telemval) ){
+            db.log.error('attempt to coerce invalid value [' + value + '] for tag ' + this.id);
+            return undefined;
+        }
+        else {
+            return telemval;
+        }
     }
     else if (this.value_info.type === TAG_TYPES.ANALOG){
         db.log.warn('TODO - implement analog tag types.');
