@@ -118,8 +118,10 @@ exports.subscribe = function(tagid, driverInfo) {
     //Read current value of item on nextTick so subscriber gets current value initiazed
     //TODO - perhaps expose a Driver object for driver developers that has a register item method that
     //schedules emit itemvalue on nextTick and then calls custom drivers register method?
-    process.nextTick( function() { driver.driverObj.read_item(item); });
-	
+    process.nextTick( function() {
+        var value = driver.driverObj.read_item(item);
+        driver.procItemValues(item,value);
+    });
 };
 
 //Get list of loaded drivers as an array of driver id's.
