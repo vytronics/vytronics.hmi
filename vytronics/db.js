@@ -36,6 +36,8 @@ module.exports.driverdb = null;	//Database of loaded drivers.
 
 module.exports.rpcdb= null;	//Database of defined remote procedure calls that clients can invoke
 
+module.exports.serverdb = null; //Server config and runtime vars
+
 module.exports.projectdir = null;	//Path to project files
 
 //Global util functions- TODO create a util vyuti module?
