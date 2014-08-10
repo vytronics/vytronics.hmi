@@ -136,23 +136,35 @@ var vy = (function () {
 			if (!result) {
 				console.log("unsubscribe error. tagId:" + sub.tagid);
 				return;
-			}
-            
-            //Remove and delete
-            var i = tag_subs.indexOf(sub);
-            if (-1 !== i) {
-                tag_subs.splice(i,1);
-            }
-            //TODO - delete something to make sure can be garbage collected or is that not necessary?
-            //Danger is leaving a referene to something in an iframe doc that was unloaded. Is splice of the
-            //array good enough to release all references?
+			}            
 		});
+        
+        //Remove and delete no matter what
+        var i = tag_subs.indexOf(sub);
+        if (-1 !== i) {
+            tag_subs.splice(i,1);
+        }
+        //TODO - delete something to make sure can be garbage collected or is that not necessary?
+        //Danger is leaving a referene to something in an iframe doc that was unloaded. Is splice of the
+        //array good enough to release all references?
+
 	}    
     
     
     function unsubscribeStageDocTags(doc){
          var hmi_id = doc['__hmi_id'];
-        tag_subs.forEach( function(sub){
+        
+        //Get list of all stage tags
+        var subs = [];
+        tag_subs.forEach( function(sub){            
+            if (hmi_id===sub.hmi_id){
+                subs.push(sub);
+            }
+        });
+            
+        //Then call unsubscribe on the matching subs which can modify the tag_subs array which is a bad thing to do
+        //in forEach method.
+        subs.forEach( function(sub){                                
             if (hmi_id===sub.hmi_id){
                 unsubscribe(sub);
             }
@@ -323,8 +335,7 @@ var vy = (function () {
                 instrumentDocument(this);
 
                 
-			});
-            
+			})
 	
         //========= Socket stuff                        
         socket = io.connect();
@@ -459,6 +470,20 @@ console.log('create_ctl_popup elem:', elem, ' items:', items);
             show_popup();
         });
     }
+    
+    //For development/debug
+    //  pswd - fixed password = doit
+    //  request - specific dump request. For now ignored and dump everything
+    var dump = function (pswd, request){
+        if ( pswd !== 'doit') return;
+        
+        return {
+            hmiCount: hmiCount,
+            tag_subs: tag_subs,
+            socket_connect_listeners: socket_connect_listeners
+        }
+    };
+        
         
 	//Return public members
     return {
@@ -468,7 +493,8 @@ console.log('create_ctl_popup elem:', elem, ' items:', items);
         injectScript: injectScript,  //Make this available in client
         create_tagsub: create_tagsub,
         app_call: app_call,
-        create_ctl_popup: create_ctl_popup
+        create_ctl_popup: create_ctl_popup,
+        dump: dump
     };
     
 })();
