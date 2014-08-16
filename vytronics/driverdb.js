@@ -37,7 +37,8 @@ exports.load = function (json) {
     
     var builtin = [
         {id:'sys', info:{uri:'./sysdriver'}},
-        {id:'sim', info:{uri:'./simdriver'}}
+        {id:'sim', info:{uri:'./simdriver'}},
+        {id:'mem', info:{uri:'./memdriver'}}
     ];
 
     //Instantiate built in drivers
@@ -188,10 +189,15 @@ exports.stop = function(id) {
 exports.emitter = emitter; //driverdb event emitter. TODO - why does exports.on = emitter.on not work?
 
 exports.write_item = function(driverinfo, value) {
-
-    var driver = drivers[driverinfo.id];
     
-    return driver.driverObj.write_item(driverinfo.item, value);    
+    if ( !driverinfo ) return false; //TODO - error log
+    
+    var driver = drivers[driverinfo.id];
+
+    if (!driver) return false; //TODO - error log
+    
+    return driver.driverObj.write_item(driverinfo.item, value);
+    
 };
 
 //Create a driver from config info in json file
