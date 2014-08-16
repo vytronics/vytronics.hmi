@@ -140,17 +140,11 @@ exports.getTag = getTag;
 exports.write_tag_request = function (tagid, value) {
     
     var tag = getTag(tagid);
+        
+    //Coerce value if necessary to telemetry value
+    value = tag.coerce_value(value);
+    db.driverdb.write_item(tag.driverinfo, value);
     
-    //TODO - also just do memory write if driver is stopped?
-    if ( ! tag.driverinfo ) {   //This is an in memory tag
-        //setValue will take care of coercion.
-        tag.setValue(value);
-    }
-    else {
-        //Coerce value if necessary to telemetry value
-        value = tag.coerce_value(value);
-        db.driverdb.write_item(tag.driverinfo, value);
-    }
     return true;
 }
 
@@ -162,7 +156,9 @@ function Tag(tagid, json) {
 	
 	this.id = tagid;
 	this.value = json.defaultValue;
-	this.driverinfo = json.driverinfo;
+    
+    //Assign to mem driver if no driver info
+	this.driverinfo = json.driverinfo || { id:'mem', item:tagid};
     
     //The value_info object gives tags their personality. Provides the information for converting raw
     //telemetered values to the desired engineering values (or discrete states) and visa versa. Also
