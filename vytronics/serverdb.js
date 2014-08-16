@@ -29,10 +29,10 @@ module.exports.listen_port = undefined;
 
 //Load server config
 module.exports.load = function (json) {
+    
 	if ( undefined === json ) {
 		return;
 	}
-console.log('##### server json:', json);    
     
     //Get network config. Order of precedence is:
     //  project.yaml file
@@ -42,8 +42,10 @@ console.log('##### server json:', json);
     //
     module.exports.listen_port = json.listen_port || process.env.PORT || 8000;
     module.exports.listen_ip = json.listen_ip || process.env.IP || "127.0.0.1";
-    
     db.log.info('server will attempt to listen on ' + module.exports.listen_ip + ':' + module.exports.listen_port);
+    
+    //Optional home page overriding index.html
+    module.exports.home_page = json.home_page;
     
 };
 
