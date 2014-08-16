@@ -73,12 +73,6 @@ module.exports.start = function() {
     //To turn off debug messages
     io.set('log level', 1);
 
-    //Webserver. Root of the scripts that get included in project specific HTML
-    router.use(express.static(path.resolve(__dirname,'client')));
-
-    //This is the actual client directory and takes 2nd precedence.
-    router.use(express.static(path.resolve(projectdir,'hmi')));
-
     //Listen for client connections and create clients
     io.on('connection', function (socket) {
 
@@ -110,7 +104,19 @@ module.exports.start = function() {
         }
         else {
     
-            console.log('##### db.serverdb:',db.serverdb);
+            //Webserver. Root of the scripts that get included in project specific HTML
+            router.use(express.static(path.resolve(__dirname,'client')));
+
+            //This is the actual client application directory and takes 2nd precedence.
+            router.use(express.static(path.resolve(projectdir,'hmi'),
+                                      //Override default index.html if project.yml defines server.home_page
+                                      {'index': db.serverdb.home_page || 'index.html'}
+                                     ));
+
+            /*//Override index.html default page if a home page is defined for the server
+            if ( db.serverdb.home_page ) {
+                router.use(express.static(path.resolve(projectdir,'hmi')));
+            }*/
 
             server.listen(db.serverdb.listen_port, db.serverdb.listen_ip, function(){
               var addr = server.address();
