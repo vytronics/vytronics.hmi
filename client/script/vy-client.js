@@ -115,23 +115,22 @@ var vyhmi = (function (){
     //Examples called within vy:instrument
     //
     //  //tag1.value=0 will index corresponding array values[0]
-    //  vy.instrument="vyhmi.map_attr(this, 'tag1', 'style', ['fill:red', 'fill:green']);"
+    //  vy.instrument="vyhmi.map_attr(this, 'tag1', 'fill', ['red', 'green']);"
     //
     //  //tag1.value='normal' will index a property in values['normal']
-    //  vy.instrument="vyhmi.map_attr(this, 'tag1', 'style', { alarm:'fill:red', normal:'fill:green']);"
+    //  vy.instrument="vyhmi.map_attr(this, 'tag1', 'fill', { alarm:'red', normal:'green']);"
     //
     function map_attr( elem, tagid, attr, values) {   
         linktag( elem, tagid, function(tag){elem.setAttribute(attr, values[tag.value])});
     }
 
     
-    //Convinience function to an style to an array like object
-    //See map_attr for values parameter usage
-    function poke_style( elem, tagid, stylename, values) {   
+    //See map_attr for value parameter usage
+    //NOTE - used to be named poke_style
+    function map_style( elem, tagid, stylename, values) {   
         linktag( elem, tagid, function(tag){elem.style[stylename] = values[tag.value];});
     }
-    
-     
+         
     //Convinience function to rotate an element about its center based on tag value.
     //If func is provided it will be used to conver tag.value to degrees, otherwise
     //use raw value
@@ -233,7 +232,8 @@ var vyhmi = (function (){
         app_call: app_call,
         scale_fit_svg: scale_fit_svg,
         map_attr: map_attr,
-        poke_style: poke_style,
+        map_style: map_style,
+        poke_style: map_style, //To keep backwards capability
         rotate: rotate,
         create_ctl_popup: create_ctl_popup
     };
