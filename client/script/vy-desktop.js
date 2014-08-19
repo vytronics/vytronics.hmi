@@ -187,7 +187,8 @@ var vy = (function () {
                 targetWindow.eval(code);
             } catch (err) {
                 console.log("Error injecting script into client:", err.message);
-                console.log("code:" + code);
+                //console.log("code:" + code);
+                console.log("Stack:" + err.stack);
             }
         }
     }
