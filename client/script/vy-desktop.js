@@ -107,7 +107,7 @@ var vy = (function () {
                      
         //Only do if connected. Don't worry, each time a connection is established the
         //desktop will resend all tag subscriptions.
-        if(socket.socket.connected) {
+        if(socket.connected) {
             socket.emit("subscribeTag", sub.tagid, function (result) {
                 if (!result) {
                     console.log("subscribe error. tagId:" + sub.tagid);
