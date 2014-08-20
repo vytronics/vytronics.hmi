@@ -1,6 +1,6 @@
 {
     "name": "vytronics.hmi",
-    "version": "0.0.14",
+    "version": "0.0.15",
     "description": "Vytronics HMI server. Core components Vytronics HMI - The 100% Free, Open-Source, SCADA/HMI Initiative",
     "keywords": ["SCADA", "HMI", "DCS", "industrial controls", "LCP",
                  "Local Control Panel", "Vytronics"],
@@ -22,7 +22,7 @@
     },
     "dependencies": {
         "express": "~3.2.4",
-        "socket.io": "~0.9.14",
+        "socket.io": "~1.0.6",
         "log4js": "~0.6.14",
         "js-yaml": "~3.0.2"
     }
