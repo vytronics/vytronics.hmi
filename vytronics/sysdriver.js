@@ -30,9 +30,13 @@ System driver module
 
 
 var events = require("events");
+var vyutil = require('./vyutil');
 var db = require('./db');
+var log = require('log4js').getLogger('sysdriver');
+log.setLevel = vyutil.getenv('VYTRONICS_SYSDRIVER_LOG_LEVEL', 'warn');
 
-db.log.debug("Loading sysdriver module.");
+
+log.debug("Loading sysdriver module.");
 
 module.exports.version = "0.0.0.0";
 

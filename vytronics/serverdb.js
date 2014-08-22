@@ -21,6 +21,9 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 //serverdb.js - Server config and runtime info
 
 var db = require('./db');
+var vyutil = require('./vyutil');
+var log = require('log4js').getLogger('serverdb');
+log.setLevel = vyutil.getenv('VYTRONICS_SERVERDB_LOG_LEVEL', 'warn');
 
 module.exports.version = '0.0.0';
 
@@ -42,7 +45,7 @@ module.exports.load = function (json) {
     //
     module.exports.listen_port = json.listen_port || process.env.PORT || 8000;
     module.exports.listen_ip = json.listen_ip || process.env.IP || "127.0.0.1";
-    db.log.info('server will attempt to listen on ' + module.exports.listen_ip + ':' + module.exports.listen_port);
+    log.info('server will attempt to listen on ' + module.exports.listen_ip + ':' + module.exports.listen_port);
     
     //Optional home page overriding index.html
     module.exports.home_page = json.home_page;

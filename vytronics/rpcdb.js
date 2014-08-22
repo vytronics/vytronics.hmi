@@ -23,6 +23,9 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 var db = require('./db');
+var vyutil = require('./vyutil');
+var log = require('log4js').getLogger('rpcdb');
+log.setLevel = vyutil.getenv('VYTRONICS_RPCDB_LOG_LEVEL', 'warn');
 
 
 exports.version = '0.0.0';
@@ -41,7 +44,7 @@ exports.invoke = function(call_name, call_data) {
     //Is call defined?
     var callinfo = exports.calls[call_name];
     
-    db.log.debug('rpcdb invoke call_name:' + call_name + ' call_data:', call_data);
+    log.debug('rpcdb invoke call_name:' + call_name + ' call_data:', call_data);
 
     //Does call exist and is it a function?        
     if( callinfo && (typeof(callinfo.call_function) === 'function')) {

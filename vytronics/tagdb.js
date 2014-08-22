@@ -38,6 +38,9 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 var vyutil = require("./vyutil");
 var events = require("events");
 var db = require("./db");
+var log = require('log4js').getLogger('tagdb');
+log.setLevel = vyutil.getenv('VYTRONICS_TAGDB_LOG_LEVEL', 'warn');
+
 
 exports.version = '0.0.0';
 		
@@ -70,7 +73,7 @@ var load = function (json) {
             
             //sys.* is reserved
             if (/^sys\..*/.exec(tagid)){
-                db.log.error('tagdb load sys.* is a reserved tag id pattern.');
+                log.error('tagdb load sys.* is a reserved tag id pattern.');
                 continue;
             }
             
@@ -106,7 +109,7 @@ var start = function() {
 				}
 				catch(err){
 					//TODO - log this
-					db.log.error("Tag:"+tag.id+" calcVal error:" + err.message, err.stack);
+					log.error("Tag:"+tag.id+" calcVal error:" + err.message, err.stack);
 				}
 			}, tag.calc.interval);
 		}
@@ -176,8 +179,8 @@ function Tag(tagid, json) {
     //  For analog tags...
     //  value_info: {
     //      type: "analog",
-    //      to: !!js/function "function(value) { return value*10 - 3; }",
-    //      from: !!js/function "function(volts) { return (volts + 3) / 10; }",
+    //      to_daq: !!js/function "function(value) { return value*10 - 3; }",
+    //      from_daq: !!js/function "function(volts) { return (volts + 3) / 10; }",
     //      min: -30,
     //      max: 100,
     //      //Need something for alarms TODO
@@ -219,7 +222,7 @@ Tag.prototype.setValue = function(value) {
         this.value = tagval;
     }
     else if (this.value_info.type === TAG_TYPES.OBJECT) {
-        db.log.warn('TODO - implement analog tag types.');
+        log.warn('TODO - implement analog tag types.');
         //Coerce JSON strings to objects?
         this.value = value;
     }
@@ -234,7 +237,7 @@ Tag.prototype.setValue = function(value) {
         }
         
         if ( ! vyutil.isDefined(mapval) ){
-            db.log.error('attempt to set invalid value [' + value + '] for tag ' + this.id);
+            log.error('attempt to set invalid value [' + value + '] for tag ' + this.id);
             return;
         }
         else {
@@ -242,8 +245,16 @@ Tag.prototype.setValue = function(value) {
         }
     }
     else if (this.value_info.type === TAG_TYPES.ANALOG){
-        db.log.warn('TODO - implement analog tag types.');
-        this.value = +value;
+        value = +value;
+        if (isNaN(value)) return; //TODO log error?
+        
+        var from_daq = this.value_info.from_daq;
+        if ( from_daq ) { //If conversion is defined, do it
+            value = from_daq(value);
+            
+            //TODO - test min and max if limits are defined
+            this.value = value;
+        }        
     }
 
     var data = {
@@ -291,7 +302,7 @@ Tag.prototype.coerce_value = function (value){
             }
         }
         if ( ! vyutil.isDefined(telemval) ){
-            db.log.error('attempt to coerce invalid value [' + value + '] for tag ' + this.id);
+            log.error('attempt to coerce invalid value [' + value + '] for tag ' + this.id);
             return undefined;
         }
         else {
@@ -299,11 +310,20 @@ Tag.prototype.coerce_value = function (value){
         }
     }
     else if (this.value_info.type === TAG_TYPES.ANALOG){
-        db.log.warn('TODO - implement analog tag types.');
-        return +value;
+        value = +value;
+        if (isNaN(value)) return; //TODO log error?
+        
+        var to_daq = this.value_info.to_daq;
+        if ( to_daq ) { //If conversion is defined, do it
+            value = to_daq(value);
+            
+            //TODO - test min and max if limits are defined
+            return value;
+        }        
+        
     }
     else {
-        db.log.warn('tag.coerce_value programmer error tag:' + this.id + '?');
+        log.warn('tag.coerce_value programmer error tag:' + this.id + '?');
     }
 
 };

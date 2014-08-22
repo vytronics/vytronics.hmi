@@ -50,6 +50,3 @@ module.exports.GUID = function() {
 			return v.toString(16);
 		});
 };	
-
-//For global logging infrastructure.
-module.exports.log = require('log4js').getLogger();

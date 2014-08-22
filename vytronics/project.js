@@ -29,6 +29,8 @@ var path = require('path');
 var vy_yaml = require('./vy.yaml');
 var vyutil = require('./vyutil');
 var db = require('./db');
+var log = require('log4js').getLogger('project');
+log.setLevel = vyutil.getenv('VYTRONICS_PROJECT_LOG_LEVEL', 'warn');
 
 exports.version = '0.0.0';
 
@@ -62,7 +64,7 @@ var load = function(projectdir, callback) {
 
 	//TODO - unload any existing project?
 	
-	db.log.info("Loading project " + file);
+	log.info("Loading project " + file);
 	try {
 
 		var err = undefined;
@@ -70,7 +72,7 @@ var load = function(projectdir, callback) {
         vy_yaml.load(file, function (error, json){
             
             if (error) {
-                db.log.error('error loading project.yaml - ' + error.stack || error.message || 
+                log.error('error loading project.yaml - ' + error.stack || error.message || 
                              String(error));
                 err = err.message;
             }
@@ -124,8 +126,8 @@ var load = function(projectdir, callback) {
 	   });
     }
 	catch(err) {
-		db.log.fatal("Exception loading project. Err:" + err);
-		db.log.fatal(err.stack);
+		log.fatal("Exception loading project. Err:" + err);
+		log.fatal(err.stack);
         process.exit(1);
 	}
 };

@@ -52,8 +52,11 @@ Simulation driver
 */
 
 var db = require("./db");
+var vyutil = require('./vyutil');
+var log = require('log4js').getLogger('simdriver');
+log.setLevel = vyutil.getenv('VYTRONICS_SIMDRIVER_LOG_LEVEL', 'warn');
 
-db.log.debug("Loading simdriver.");
+log.debug("Loading simdriver.");
 
 var events = require("events");
 
@@ -225,7 +228,7 @@ SimDriver.prototype.register = function(item) {
     
     var interval = parseInt(tokens[1],10);
     if ( (!interval) || isNaN(interval) || (interval<=0)) {
-        db.log.error('simdriver.register interval [' + tokens[1] +
+        log.error('simdriver.register interval [' + tokens[1] +
                     '] must be a positive non-zero integer:' + item);
         return;
     }
@@ -236,7 +239,7 @@ SimDriver.prototype.register = function(item) {
 	//Is this a valid simulator function?
 	var builder = SIM_FUNCTIONS[funcName];
 	if( ! builder ) {
-		db.log.error("simdriver Invalid function name:"+funcName);
+		log.error("simdriver Invalid function name:"+funcName);
 		return;
 	}
 	
@@ -267,7 +270,7 @@ SimDriver.prototype.start = function() {
     
     var self = this;
     
-	db.log.debug("simdriver started.");
+	log.debug("simdriver started.");
     
     Object.getOwnPropertyNames(this.simulators).forEach(function(prop) {
         //ForEach function passed the SimDriver object as this var
@@ -282,7 +285,7 @@ SimDriver.prototype.start = function() {
             } catch(err){
                 //These can only be program errors and should let program crash. Catching for
                 //now during development and early releases.
-                db.log.fatal('simdriver function exception item:' + simObj.item + ' err:' + err.message, err.stack);
+                log.fatal('simdriver function exception item:' + simObj.item + ' err:' + err.message, err.stack);
                 process.exit(1);
             }
         }, simObj.interval);
@@ -295,7 +298,7 @@ SimDriver.prototype.start = function() {
 
 //Driver object must define a stop method to be called by the driver database.
 SimDriver.prototype.stop = function() {
-	db.log.debug("simdriver stopped.");	    
+	log.debug("simdriver stopped.");	    
 
     Object.getOwnPropertyNames(this.simulators).forEach(function(prop) {
         //ForEach function passed the SimDriver object as this var

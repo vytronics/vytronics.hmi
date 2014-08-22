@@ -19,8 +19,11 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var util = require("util");
+var vyutil = require('./vyutil');
 var events = require("events");
 var db = require("./db");
+var log = require("log4js").getLogger('clientdb');
+log.setLevel = vyutil.getenv('VYTRONICS_CLIENTDB_LOG_LEVEL', 'warn');
 
 exports.version = '0.0.0';
 
@@ -32,7 +35,7 @@ var createClient = function(project, socket) {
 		clients.forEach( function(client) {
 			if(client.socket === socket) {
 				//TODO - need to clean any client stuff up?
-				db.log.info("client disconnected:" + client.guid);
+				log.info("client disconnected:" + client.guid);
 				clients.splice(clients.indexOf(client), 1);
 			}			
 		});
@@ -67,7 +70,7 @@ function Client(socket,guid,project) {
 	this.socket = socket;
 	this.subscriptions = [];
 	
-	db.log.info("client logged on. GUID:" + guid);
+	log.info("client logged on. GUID:" + guid);
 	
 	var self = this;
 	
@@ -78,7 +81,7 @@ function Client(socket,guid,project) {
         try {
             result = db.rpcdb.invoke(funcName, call_data);
         } catch(err) {
-            db.log.error('app_call:' + err.message,err,err.stack);
+            log.error('app_call:' + err.message,err,err.stack);
             call_err = err.message;
         }
         if(!callback) return;
@@ -91,7 +94,7 @@ function Client(socket,guid,project) {
 	
     socket.on('subscribeTag', function(tagid, ackfunc) {
         
-        db.log.debug('clientdb.subscribeTag tagid:' + tagid);
+        log.debug('clientdb.subscribeTag tagid:' + tagid);
 
 		//TODO - refractor this to return an object { result:, err: } where
 		//err is just a string instead of array?
@@ -145,7 +148,7 @@ Client.prototype.subscribeTag = function(tagid) {
 		return guid; //Ack the subscription.
 	}
 	else {
-		db.log.warn("client:" + this.guid +" subscribeTag tagid:"+tagid+" not found?");
+		log.warn("client:" + this.guid +" subscribeTag tagid:"+tagid+" not found?");
 	}
 	
 	//TODO - real return code. Return blank guid if any errors?

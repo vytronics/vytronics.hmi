@@ -21,8 +21,11 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 var util = require("util");
 var path = require("path");
 var events = require("events");
+var vyutil = require('./vyutil');
 var db = require("./db");
 var sysdriver = require("./sysdriver");
+var log = require("log4js").getLogger('driverdb');
+log.setLevel = vyutil.getenv('VYTRONICS_DRIVERDB_LOG_LEVEL', 'warn');
 
 exports.version = '0.0.0';
 
@@ -47,7 +50,7 @@ exports.load = function (json) {
     });
 
     
-    db.log.debug("Loadings drivers.");
+    log.debug("Loadings drivers.");
     
  	for( var drvid in json ) {
 		if( json.hasOwnProperty(drvid ) ) {
@@ -56,11 +59,11 @@ exports.load = function (json) {
             var reserved = false;
             builtin.forEach( function(drv) {
                 if ( drv.info.uri === json[drvid].uri ) {
-                    db.log.error("driverdb.load error:" + drv.info.uri + " is loaded by default. Not loading driver:" + drvid, json[drvid]);
+                    log.error("driverdb.load error:" + drv.info.uri + " is loaded by default. Not loading driver:" + drvid, json[drvid]);
                     reserved=true;
                 }              
                 if ( drv.id === drvid ) {
-                    db.log.error("driverdb.load error:" + drvid + " is a reserved driver id. Not loading driver:" + drvid,json[drvid]);
+                    log.error("driverdb.load error:" + drvid + " is a reserved driver id. Not loading driver:" + drvid,json[drvid]);
                     reserved=true;
                 }
             });
@@ -73,7 +76,7 @@ exports.load = function (json) {
             //drivers look for and expect these in the exe's node_module folder
             json[drvid].uri = path.resolve(process.cwd(),'node_modules',json[drvid].uri);
             
-            db.log.debug("Resolving custom driver to path " + json[drvid].uri);
+            log.debug("Resolving custom driver to path " + json[drvid].uri);
             
 			drivers[drvid] = new Driver(drvid,json[drvid]);
 		}
@@ -91,14 +94,14 @@ exports.load = function (json) {
 exports.subscribe = function(tagid, driverInfo) {
 
 	if ( !driverInfo.id) {
-		db.log.error("driverdb driver missing id property:", driverInfo);
+		log.error("driverdb driver missing id property:", driverInfo);
 		return;
 	}
 	
 	var driverid = driverInfo.id;
 
 	if( ! drivers.hasOwnProperty(driverid) ) {
-		db.log.error("DriverDB no such driver ID:" + driverid);
+		log.error("DriverDB no such driver ID:" + driverid);
 		return;
 	}
 	
@@ -152,7 +155,7 @@ exports.start = function(id) {
     
     if (!id) {
         exports.getDrivers().forEach( function(id) {
-            db.log.debug("Starting driver:" + id);
+            log.debug("Starting driver:" + id);
             drivers[id].driverObj.start();
             drivers[id].started.set_value(true);           
         });
@@ -171,7 +174,7 @@ exports.start = function(id) {
 exports.stop = function(id) {
     if (!id){
         Object.getOwnPropertyNames(drivers).forEach( function(id) {
-            db.log.debug("Stopping driver:" + id);
+            log.debug("Stopping driver:" + id);
             drivers[id].driverObj.stop();
             drivers[id].started.set_value(false); 
         });	
@@ -202,7 +205,7 @@ exports.write_item = function(driverinfo, value) {
 
 //Create a driver from config info in json file
 function Driver(id,info) {
-    db.log.debug('Creating driver id:'+id + ' info:',info);
+    log.debug('Creating driver id:'+id + ' info:',info);
     //To capture this var in closures
 	var self = this;
 		
@@ -254,7 +257,7 @@ function Driver(id,info) {
 Driver.prototype.procItemValues = function(item,value) {
 	var tags = this.items[item];
 	if(!tags) {
-		db.log.warn("Driver id:" + this.id + " .Received item change for invalid item:" + item);
+		log.warn("Driver id:" + this.id + " .Received item change for invalid item:" + item);
 		return;
 	}
 	
