@@ -30,6 +30,8 @@ var express = require('express');
 var vyutil = require('./vytronics/vyutil');
 var project = require('./vytronics/project');
 
+var log = require('log4js').getLogger('server');
+
 var self = this;
 
 var datadir;
@@ -38,14 +40,10 @@ var datadir;
 var db = require('./vytronics/db');
 module.exports.db = db;
 
-//Shortcut to logger object
-var log = module.exports.db.log;
-
-module.exports.log = log;
-
 //Default logging level is set to WARN or let it be changed by
 //env var VYTRONICS_LOG_LEVEL at startup or by modifying the log config file at runtime
-log.setLevel(vyutil.getenv('VYTRONICS_LOG_LEVEL', 'WARN'));
+var log_level = vyutil.getenv('VYTRONICS_SERVER_LOG_LEVEL', 'warn');
+log.setLevel(log_level);
 
 module.exports.start = function() {
     log.info("Vytronics server.js started with node versions",process.versions );
@@ -69,9 +67,6 @@ module.exports.start = function() {
 
     //IO between server and clients
     var io = socketio.listen(server);
-
-    //To turn off debug messages
-    io.set('log level', 1);
 
     //Listen for client connections and create clients
     io.on('connection', function (socket) {
