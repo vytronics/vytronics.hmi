@@ -25,19 +25,142 @@ namespace vyhmi. These are injected AFTER the document is loaded and DOM is avai
 
 var vyhmi = (function (){
     
-    console.log("vy-client injecting core scripts in document:",document);
+    var socket, tag_subs = [];    
     
-    function create_tagsub(tagid, callback) {
+    //Create a tag subscription and register it.
+    function create_tagsub(tagid, callback){
+        var sub = {
+            tagid: tagid,
+            callback: callback,
+            guid: undefined     //Will be set when subscribed
+        };
+        tag_subs.push(sub);
+        subscribe_tag(sub);
+    }
+
+    //Tell server we want to get "tag_changed" messages for this tag. Functions are stored during
+    //instrumentation of hmi stages when they are loaded/instrumented. Desktop will look these up
+    //on receipt of a tag_changed message. The sub object has the following properties
+    //  id - tag id
+    //  hmi_id - the id of the hmi stage doc it applies to
+    //  callback - function to call when tag changes
+    //  guid - server assigned global uid
+    //
+	function subscribe_tag(sub) {
+		
+		//TODO - if server never responds then guid will also be undefined,
+		//Unsubscribe methods should purge undefined guids also.
+                     
+        //Only do if connected. Don't worry, each time a connection is established the
+        //desktop will resend all tag subscriptions.
+        if(socket.connected) {
+            socket.emit("subscribeTag", sub.tagid, function (result) {
+                if (!result) {
+                    console.log("subscribe error. tagId:" + sub.tagid);
+                    return;
+                }
+                //Store the subscription GUID handle returned from the server	
+                sub.guid = result;
+            });
+        }
+        else {
+            //console.log('info - subscribe called with server not connected. Subscription is deferred.');
+        }
+	}
+    
+	//Unlink callback and tell server to unsubscribe
+	function unsubscribe_tag(sub) {
         
-        var hmi_id = document["__hmi_id"]; //Desktop will set this when document is parsed
-        parent.vy.create_tagsub(hmi_id, tagid, callback);
+        //TODO - need to check for connected first?
+
+        //This is where it is important to have a GUID for each subscription. If there is more than
+        //one subscription for a given tag then having guid makes sure other subs are not effected should
+        //the subsystem be changed to allow dynamic subscriptions within an actively loaded stage HMI.
+        socket.emit("unsubscribeTag", sub.tagid, sub.guid, function (result) {
+			if (!result) {
+				console.log("unsubscribe error. tagId:" + sub.tagid);
+				return;
+			}            
+		});
+        
+        //Remove and delete no matter what
+        var i = tag_subs.indexOf(sub);
+        if (-1 !== i) {
+            tag_subs.splice(i,1);
+        }
+        //TODO - delete something to make sure can be garbage collected or is that not necessary?
+        //Danger is leaving a referene to something in an iframe doc that was unloaded. Is splice of the
+        //array good enough to release all references?
+
+	}
+    
+    function subscribeAllTags(){        
+        tag_subs.forEach( function(sub){
+            subscribe_tag(sub);
+        });
+    }
+
+                			    
+    //Execute a remote function call on the server and invoke callback(result_data, err) when complete
+    function app_call(name, call_data, callback) {
+        socket.emit("app_call", name, call_data, function(result_data, err) {
+            //console.log('app_call result:', result_data);
+            if (callback) callback(result_data, err);
+        });
     }
     
+    
+    //For development/debug
+    //  pswd - fixed password = doit
+    //  request - specific dump request. For now ignored and dump everything
+    var dump = function (pswd, request){
+        if ( pswd !== 'doit') return;
+        
+        return {
+            tag_subs: tag_subs,
+        }
+    };    
+ 
+    // ===== Now do some document loaded stuff. Remember, the document is already loaded when vy-client.js is executed ====
+    
+    
+    //========= Socket stuff                        
+    socket = io.connect();
+    socket.on("connect", function () {
+        console.log("socket connected");
+        //re-request all subscriptions
+        subscribeAllTags();
+    });
+    
+    
+    socket.on('disconnect', function () {
+        console.log("socket disconnected.");
+    });
+
+    socket.on('reconnect_failed', function () {
+        //TODO - something nicer and maybe provide a reconnect button. Don't think socketio will try again
+        alert("Reconnection failed. Refresh page.");
+    });
+    
+    socket.on('tagChanged', function (tagid, tag) {
+        //console.log("tagChanged id:" + tagid + " tag{" + tag.id + "," + tag.value);
+
+        tag_subs.forEach( function (sub){
+            try {
+                if (sub.tagid === tagid) {
+                    sub.callback(tag);
+                }
+            } catch (err) {
+                console.log('exception in tagchanged callback tagid:' + tagid +
+                            ' msg:' + err.message +
+                            ' callback:', sub.callback);
+            }
+        });
+    });
+ 
     function create_ctl_popup(elem,items) {
-        parent.vy.create_ctl_popup(elem, items);   
-    }
-    
-    
+        vy-desktop.create_ctl_popup(elem, items);   
+    }    
     
     //Link a tag change to an element in the DOM
     function linktag(elem, tagid, script) {
@@ -75,17 +198,20 @@ var vyhmi = (function (){
     //scripts in the document (i.e., svg-edit)
     function load_script (uri) {
         console.log("vyhmi.load_script " + uri);   
-        parent.vy.injectScript(window, uri); //Inject into our own window. Remember, this is the client calling.
+        vy_desktop.injectScript(window, uri); //Inject into our own window. Remember, this is the desktop window calling this.
     }
+        
     
-    //Invoke a server app call that when completed invokes callback(result_data, err)
-    function app_call(name, call_data, callback) {
-        parent.vy.app_call( name, call_data, callback);
-    }
-    
+        
     //Fit contents to the hosted iframe. Zoom to fit maintaining aspect. Should be put in
     //the SVG element of the page. Set background to optional pagecolor
     function scale_fit_svg(elem, pagecolor) {
+        
+        //TODO - SVG specific for now. Make HTML version?
+        if ( !elem || (! elem instanceof SVGSVGElement) ) {
+            console.log('scale_fit elem is not an SVG element.');
+            return;
+        }
         
         //Get extents of the contained contents
         var BB = elem.getBBox();                
@@ -136,6 +262,12 @@ var vyhmi = (function (){
     //use raw value
     function rotate( elem, tagid, func) {
         
+        //TODO - SVG specific for now. Make HTML version?
+        if ( !elem || (! elem instanceof SVGElement) ) {
+            console.log('rotate elem is not an SVG element.');
+            return;
+        }
+
         var get_degrees; //function to convert tag.value to degrees
 
         if ( ! func ) {
@@ -185,6 +317,12 @@ var vyhmi = (function (){
     //
     function load_widget(elem, url, config) {
         
+        //TODO - SVG specific for now. Make HTML version?
+        if ( !elem || (! elem instanceof SVGSVGElement) ) {
+            console.log('load_widget elem is not an SVG element.');
+            return;
+        }
+            
         console.log('load_widget:' + url + ' config:',config);
         
         var BB = elem.getBBox();
@@ -223,7 +361,7 @@ var vyhmi = (function (){
             }
         });                
     }
-    
+
     return {
         linktag: linktag,
         create_tagsub: create_tagsub,
@@ -235,7 +373,9 @@ var vyhmi = (function (){
         map_style: map_style,
         poke_style: map_style, //To keep backwards capability
         rotate: rotate,
-        create_ctl_popup: create_ctl_popup
+        create_ctl_popup: create_ctl_popup,
+        dump: dump
     };
+
 })();
 

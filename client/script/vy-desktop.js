@@ -18,7 +18,8 @@ You should have received a copy of the GNU Affero General Public License
 along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//Dependencies that client must source
+//Dependencies that desktop html must source but maybe make all this injectable like
+//how socket.io does it
 // socket.io
 // jquery
 
@@ -30,6 +31,9 @@ var vy = (function () {
     
     'use strict';
     
+    //The namespace for vytronics instrumentation
+	var vyns = "http://www.vytronics.com/hmi";
+    	
     $(document).ready( function() {
         
         //Init if jquery mobile is included
@@ -40,27 +44,9 @@ var vy = (function () {
         }
     });
 
-    var socket, vyns, hmiCount, tag_subs, socket_connect_listeners;
-    
-    hmiCount = 1; //Global counter used to create unique HMI iframe client IDs
-    
-    tag_subs = []; //Array of current active tag subscriptions
-    
-    socket_connect_listeners = []; //Array of HMTL clients that want socket connection events.
-    //Each listener supplies a routine function(connected)
-    
-    //One socket per desktop
-    socket = undefined;
-    
     //The namespace for vytronics instrumentation
 	vyns = "http://www.vytronics.com/hmi";
-    
-    //Unique client ID generator for this session so that each unique IDs can be assigned
-    //to each document loaded in an HMI iframe
-    function HMI_ID() {
-        return hmiCount++;
-    }
-	
+    	
 	//Selects all iframes that are for HMI windows (are of vy-stage class)
 	function select_HMI_stages() {
 		return $('iframe.vy-stage');
@@ -80,96 +66,6 @@ var vy = (function () {
 		}
 	}
     
-    //Create a tag subscription and register it.
-    function create_tagsub(hmi_id, tagid, callback){
-        var sub = {
-            tagid: tagid,
-            hmi_id: hmi_id,
-            callback: callback,
-            guid: undefined     //Will be set when subscribed
-        };
-        tag_subs.push(sub);
-        subscribe(sub);
-    }
-
-    //Tell server we want to get "tag_changed" messages for this tag. Functions are stored during
-    //instrumentation of hmi stages when they are loaded/instrumented. Desktop will look these up
-    //on receipt of a tag_changed message. The sub object has the following properties
-    //  id - tag id
-    //  hmi_id - the id of the hmi stage doc it applies to
-    //  callback - function to call when tag changes
-    //  guid - server assigned global uid
-    //
-	function subscribe(sub) {
-		
-		//TODO - if server never responds then guid will also be undefined,
-		//Unsubscribe methods should purge undefined guids also.
-                     
-        //Only do if connected. Don't worry, each time a connection is established the
-        //desktop will resend all tag subscriptions.
-        if(socket.connected) {
-            socket.emit("subscribeTag", sub.tagid, function (result) {
-                if (!result) {
-                    console.log("subscribe error. tagId:" + sub.tagid);
-                    return;
-                }
-                //Store the subscription GUID handle returned from the server	
-                sub.guid = result;
-                console.log('subscribe hmi_id:' + sub.hmi_id + ' tagid:' + sub.tagid + ' guid:' + sub.guid);
-            });
-        }
-        else {
-            console.log('info - subscribe called with server not connected. Subscription is deferred.');
-        }
-	}
-    
-	//Unlink callback and tell server to unsubscribe
-	function unsubscribe(sub) {
-		console.log('unsubscribe hmi_id:' + sub.hmi_id + ' tagid:' + sub.tagid + ' guid:' + sub.guid);
-        
-        //TODO - need to check for connected first?
-
-        //This is where it is important to have a GUID for each subscription. If there is more than
-        //one subscription for a given tag then having guid makes sure other subs are not effected should
-        //the subsystem be changed to allow dynamic subscriptions within an actively loaded stage HMI.
-        socket.emit("unsubscribe", sub.tagid, sub.guid, function (result) {
-			if (!result) {
-				console.log("unsubscribe error. tagId:" + sub.tagid);
-				return;
-			}            
-		});
-        
-        //Remove and delete no matter what
-        var i = tag_subs.indexOf(sub);
-        if (-1 !== i) {
-            tag_subs.splice(i,1);
-        }
-        //TODO - delete something to make sure can be garbage collected or is that not necessary?
-        //Danger is leaving a referene to something in an iframe doc that was unloaded. Is splice of the
-        //array good enough to release all references?
-
-	}    
-    
-    
-    function unsubscribeStageDocTags(doc){
-         var hmi_id = doc['__hmi_id'];
-        
-        //Get list of all stage tags
-        var subs = [];
-        tag_subs.forEach( function(sub){            
-            if (hmi_id===sub.hmi_id){
-                subs.push(sub);
-            }
-        });
-            
-        //Then call unsubscribe on the matching subs which can modify the tag_subs array which is a bad thing to do
-        //in forEach method.
-        subs.forEach( function(sub){                                
-            if (hmi_id===sub.hmi_id){
-                unsubscribe(sub);
-            }
-        });
-    }
     
     //Function to evaluate code in the global context of an HMI iframe. Uses same concept as the
     //Jquery getScript method except injects in the iframe and into a container that is valid for
@@ -187,8 +83,8 @@ var vy = (function () {
                 targetWindow.eval(code);
             } catch (err) {
                 console.log("Error injecting script into client:", err.message);
-                //console.log("code:" + code);
                 console.log("Stack:" + err.stack);
+                console.log("code:" + code);
             }
         }
     }
@@ -227,18 +123,16 @@ var vy = (function () {
 	function instrumentDocument(stage) {
         
         var hmidoc = stage.contentDocument;
-			        
-        //Assign a unique HMI ID that is used to manage its subscriptions
-        var hmi_id = 'hmi_' + HMI_ID();
-        hmidoc["__hmi_id"] = hmi_id;
-        
-        console.log("instrumentDocument hmi document id:" + hmi_id);
-        
+			                
+        console.log("instrumentDocument", stage);
+                
 		//Select all nodes that have instrumentation directives
 		//Kind of sucks that jquery does not support namespaces so gotta do this sortof brute
 		//force for now unless someone has a better idea. Will break if someone uses a different
 		//prefix for the vy xmlns.
 		$(hmidoc).find("*").filter(function () { 
+                //The "this" var will be a DOM element
+            
                 return $(this).attr('vy:instrument') || //SVG uses custom namespace
                     $(this).attr('data-vy-instrument'); //HTML uses data-xxxx attribute names
                 
@@ -264,14 +158,16 @@ var vy = (function () {
                     //example invoking vyhmi.linktag('tagid','elem.setAttribute("fill",tag.value==0?"red":"green"))
                     //will be evaluated in the stage's global scope
                     //
-                    var func = new stage.contentWindow.Function(instrumentStr).call(this);
+                    var func = new stage.contentWindow.Function(instrumentStr);
+                    
+                    func.call(this);
                     //TODO - might cause memory leaks if the call has asyn functions. Need to store the document's
                     //instrument functions and delete them when doc is unloaded?
                     
                 } catch (err) {
                     console.log("Error instrumenting document:" + err.message);
-                    console.log("Stage:", stage);
                     console.log("Element:", this);
+                    //console.log("code:" + instrumentStr);
                 }
 									
             }); //Can chain more finds here if new vy attrinutes are defined or maybe a way to
@@ -279,37 +175,6 @@ var vy = (function () {
                 //the each function.
 	}
     
-    function getStageDocTags(hmi_id){
-        var ret_subs = [];
-        tag_subs.forEach(function (sub){
-            if (sub.hmi_id===hmi_id){
-                ret_subs.push(sub);
-            }
-        });
-    }
-    
-    //TODO - dont think this will ever be needed?
-    function subscribeAllTags(){        
-        tag_subs.forEach( function(sub){
-            subscribe(sub);
-        });
-    }
-    
-    //Let HTML listen to connection status
-    //The callback is function(isConnected)
-    function addConnectionListener (callback){
-        if (socket_connect_listeners.indexOf(callback)){
-            socket_connect_listeners.push(callback);
-        }
-    }
-    function removeConnectionListener (callback){
-        var idx = socket_connect_listeners.indexOf(callback);
-        if (-1 !== idx){
-            socket_connect_listeners.splice(idx,1);
-        }
-    }
-
-		
 	//What to do when desktop window is loaded.
 	$(document).ready(function () {
 		
@@ -319,16 +184,16 @@ var vy = (function () {
 			.on("load", function () {
 				console.log("+++++++++++++++++++++++stage loaded:", this);
                 
-                //Listen for unload event so we can unsubscribe tags
-                var win = this.contentWindow;
-                var doc = this.contentDocument;
-                win.addEventListener('unload', function() {
-                    console.log("---------------------stage unloaded----------------------");
-                                unsubscribeStageDocTags(doc);
-                });
-				
+                //Make a few functions always available in stage
+                //TODO - need to do some thinking on how to best modularize script injection
+                this.contentWindow['vy_desktop'] = {
+                    injectScript: injectScript
+                };
+
+                
 				//Inject some core HMI client scripts into the global scope of the stage such as
 				//linktag etc. that are needed for instrumentation
+                injectScript(this.contentWindow, "/socket.io/socket.io.js");
 				injectScript(this.contentWindow, "/script/vy-client.js" );
                 
                 //Above ajax call is synchrous so this should work. Client scripts need to be loaded
@@ -337,71 +202,8 @@ var vy = (function () {
 
                 
 			})
-	
-        //========= Socket stuff                        
-        socket = io.connect();
-		socket.on("connect", function () {
-			console.log("socket connected");
-			//re-request all subscriptions
-			subscribeAllTags();
-            
-            //Notify clients
-            socket_connect_listeners.forEach(function(listener){
-                try {
-                    listener(true);
-                } catch (err){
-                    console.log('Exception in connection listener:' + err.message);
-                }
-            });
-		});
-
-        socket.on('disconnect', function () {
-            //Notify clients
-            socket_connect_listeners.forEach(function(listener){
-                try {
-                    listener(false);
-                } catch (err){
-                    console.log('Exception in connection listener:' + err.message);
-                }
-            });
-        });
-
-        socket.on('reconnect_failed', function () {
-            //TODO - something nicer and maybe provide a reconnect button
-            alert("Reconnection failed.");
-        });
-        //tagChanged message
-        //Format {  id:tagid,
-        //          changes: {
-        //              field1:val,
-        //              field2:val2 ...etc
-        //      }
-        //}
-        socket.on('tagChanged', function (tagid, tag) {
-			//console.log("tagChanged id:" + tagid + " tag{" + tag.id + "," + tag.value);
-            
-            tag_subs.forEach( function (sub){
-                try {
-                    if (sub.tagid === tagid) {
-                        sub.callback(tag);
-                    }
-                } catch (err) {
-                    console.log('exception in tagchanged callback tagid:' + tagid +
-                                ' msg:' + err.message +
-                                ' callback:', sub.callback);
-                }
-            });
-		});        
     });
-    
-    //Execute a remote function call on the server and invoke callback(result_data, err) when complete
-    function app_call(name, call_data, callback) {
-        socket.emit("app_call", name, call_data, function(result_data, err) {
-            //console.log('app_call result:', result_data);
-            if (callback) callback(result_data, err);
-        });
-    }
-    
+	
 
     /*================ STUFF FOR CONTROL POPUPS ======================================================
         Uses JQuery Mobile
@@ -471,31 +273,10 @@ console.log('create_ctl_popup elem:', elem, ' items:', items);
             show_popup();
         });
     }
-    
-    //For development/debug
-    //  pswd - fixed password = doit
-    //  request - specific dump request. For now ignored and dump everything
-    var dump = function (pswd, request){
-        if ( pswd !== 'doit') return;
-        
-        return {
-            hmiCount: hmiCount,
-            tag_subs: tag_subs,
-            socket_connect_listeners: socket_connect_listeners
-        }
-    };
-        
-        
+            
 	//Return public members
     return {
-        addConnectionListener: addConnectionListener,
-        removeConnectionListener: removeConnectionListener,
-        HMI_ID: HMI_ID,
-        injectScript: injectScript,  //Make this available in client
-        create_tagsub: create_tagsub,
-        app_call: app_call,
-        create_ctl_popup: create_ctl_popup,
-        dump: dump
+        create_ctl_popup: create_ctl_popup
     };
     
 })();
