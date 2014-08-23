@@ -25,7 +25,7 @@ along with Vytronics HMI.  If not, see <http://www.gnu.org/licenses/>.
 var db = require('./db');
 var vyutil = require('./vyutil');
 var log = require('log4js').getLogger('rpcdb');
-log.setLevel = vyutil.getenv('VYTRONICS_RPCDB_LOG_LEVEL', 'warn');
+log.setLevel(vyutil.getenv('VYTRONICS_RPCDB_LOG_LEVEL', 'warn'));
 
 
 exports.version = '0.0.0';

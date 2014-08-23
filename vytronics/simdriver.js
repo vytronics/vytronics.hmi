@@ -54,7 +54,7 @@ Simulation driver
 var db = require("./db");
 var vyutil = require('./vyutil');
 var log = require('log4js').getLogger('simdriver');
-log.setLevel = vyutil.getenv('VYTRONICS_SIMDRIVER_LOG_LEVEL', 'warn');
+log.setLevel(vyutil.getenv('VYTRONICS_SIMDRIVER_LOG_LEVEL', 'warn'));
 
 log.debug("Loading simdriver.");
 

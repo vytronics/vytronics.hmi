@@ -34,7 +34,7 @@ var events = require("events");
 var db = require('./db');
 var log = require('log4js').getLogger('memdriver');
 var vyutil = require('./vyutil');
-log.setLevel = vyutil.getenv('VYTRONICS_MEMDRIVER_LOG_LEVEL', 'warn');
+log.setLevel(vyutil.getenv('VYTRONICS_MEMDRIVER_LOG_LEVEL', 'warn'));
 
 
 log.debug("Loading memdriver module.");

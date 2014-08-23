@@ -33,7 +33,8 @@ var events = require("events");
 var vyutil = require('./vyutil');
 var db = require('./db');
 var log = require('log4js').getLogger('sysdriver');
-log.setLevel = vyutil.getenv('VYTRONICS_SYSDRIVER_LOG_LEVEL', 'warn');
+
+log.setLevel(vyutil.getenv('VYTRONICS_SYSDRIVER_LOG_LEVEL', 'warn'));
 
 
 log.debug("Loading sysdriver module.");

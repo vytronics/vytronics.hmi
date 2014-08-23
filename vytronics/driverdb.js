@@ -25,7 +25,7 @@ var vyutil = require('./vyutil');
 var db = require("./db");
 var sysdriver = require("./sysdriver");
 var log = require("log4js").getLogger('driverdb');
-log.setLevel = vyutil.getenv('VYTRONICS_DRIVERDB_LOG_LEVEL', 'warn');
+log.setLevel(vyutil.getenv('VYTRONICS_DRIVERDB_LOG_LEVEL', 'warn'));
 
 exports.version = '0.0.0';
 
