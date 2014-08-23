@@ -39,10 +39,10 @@ var vyutil = require("./vyutil");
 var events = require("events");
 var db = require("./db");
 var log = require('log4js').getLogger('tagdb');
-log.setLevel = vyutil.getenv('VYTRONICS_TAGDB_LOG_LEVEL', 'warn');
+log.setLevel(vyutil.getenv('VYTRONICS_TAGDB_LOG_LEVEL', 'warn'));
 
 
-exports.version = '0.0.0';
+module.exports.version = '0.0.0';
 		
 //TagDB can emit events
 var emitter = new events.EventEmitter();
@@ -57,10 +57,6 @@ var TAG_TYPES = {
     UNTYPED: 'untyped',
     OBJECT: 'object'
 };
-exports.get_tag_types = function (){
-    //make immutable by returning a copy
-    return TAG_TYPES.slice();
-}
 
 //Load tags from json file
 var load = function (json) {
@@ -80,13 +76,15 @@ var load = function (json) {
 			tags[tagid] = new Tag(tagid,json[tagid]);
 		}
 	}
+    
+    emitter.emit('loaded');
 };
 
 //TODO - exposed this for sysdriver to create system tags
 //Need more work to make it general and ensure other useages
 //properly link up to drivers and get post load processing
 //Also need to do more validation such as duplicate tags etc.
-exports.create_tag = function(tagid, config) {
+module.exports.create_tag = function(tagid, config) {
     var tag = new Tag(tagid, config);
     tags[tagid] = tag;
 }
@@ -126,21 +124,50 @@ var getTags = function() {
 	return tagIds;
 };
 
-var getTag = function(tagid) {
-	return tags[tagid];
+/*
+If tagid begins with "regex:" then return array of matches, otherwise
+returns single match
+*/
+var getTag = function (tagid) {
+    
+    var tag = tags[tagid];
+    if (tag) return tag;
+        
+    return undefined;
 };
 
-exports.load = load;
-exports.start = start;
-exports.emitter = emitter;
-exports.getTags = getTags;
-exports.getTag = getTag;
+
+var getTagsRegex = function (tagid_regex){
+    
+    var matches = [];
+
+    Object.getOwnPropertyNames(tags).forEach( function(tagid){
+        if (tagid.match(tagid_regex)) {
+            matches.push(tags[tagid]);
+        }
+    });
+
+    return matches;
+    
+};
+
+module.exports.get_tag_types = function (){
+    //make immutable by returning a copy
+    return TAG_TYPES.slice();
+}
+
+module.exports.load = load;
+module.exports.start = start;
+module.exports.on = function (type, listener){ emitter.on(type, listener); },
+module.exports.getTags = getTags;
+module.exports.getTag = getTag;
+module.exports.getTagsRegex = getTagsRegex;
 
 //Ask driver to write a value to this tagid. This is typically called from a client
 //GUI and value may need to be coerced according to tag.value_info to expected telemetry
 //value
 //
-exports.write_tag_request = function (tagid, value) {
+module.exports.write_tag_request = function (tagid, value) {
     
     var tag = getTag(tagid);
         
@@ -375,7 +402,6 @@ Tag.prototype.get_value_info = function (){
         var map = this.value_info.map;
         var states = [];
         this.value_info.map.forEach( function (mapi){
-            console.log('####mapi', mapi);
             states.push(mapi.state);
         });
         
