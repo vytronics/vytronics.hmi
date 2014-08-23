@@ -38,14 +38,13 @@ var datadir;
 
 //Let apps access db
 var db = require('./vytronics/db');
-module.exports.db = db;
 
 //Default logging level is set to WARN or let it be changed by
 //env var VYTRONICS_LOG_LEVEL at startup or by modifying the log config file at runtime
 var log_level = vyutil.getenv('VYTRONICS_SERVER_LOG_LEVEL', 'warn');
 log.setLevel(log_level);
 
-module.exports.start = function() {
+var start = function() {
     log.info("Vytronics server.js started with node versions",process.versions );
 
     //Get project directory from env or default
@@ -89,7 +88,7 @@ module.exports.start = function() {
         //socket.handshake.query.myParam if needed for the application
 
         //Create a new client
-        project.createClient(socket);
+        db.clientdb.createClient(socket);
     });
 
     project.load(projectdir, function(err) {
@@ -108,16 +107,30 @@ module.exports.start = function() {
                                       {'index': db.serverdb.home_page || 'index.html'}
                                      ));
 
-            /*//Override index.html default page if a home page is defined for the server
-            if ( db.serverdb.home_page ) {
-                router.use(express.static(path.resolve(projectdir,'hmi')));
-            }*/
-
-            server.listen(db.serverdb.listen_port, db.serverdb.listen_ip, function(){
+            server.listen(db.serverdb.listen_port, db.serverdb.listen_ip, function(){                
               var addr = server.address();
               log.info("HMI server listening at", addr.address + ":" + addr.port);
             });
         }
     });
 };
+
+var stop = function (){
+    log.warn('stop - TODO not implemented yet.');
+};
+
+//Create an in-process client
+var createAppClient = function (){
+   return db.clientdb.createClient('my app');
+};
+
+
+module.exports = {
+    start: start,
+    stop: stop,
+    createAppClient : createAppClient,
+    db: db
+};
+
+
 
