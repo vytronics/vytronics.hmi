@@ -30,17 +30,9 @@ var vy_yaml = require('./vy.yaml');
 var vyutil = require('./vyutil');
 var db = require('./db');
 var log = require('log4js').getLogger('project');
-log.setLevel = vyutil.getenv('VYTRONICS_PROJECT_LOG_LEVEL', 'warn');
+log.setLevel(vyutil.getenv('VYTRONICS_PROJECT_LOG_LEVEL', 'warn'));
 
 exports.version = '0.0.0';
-
-
-var tagChanged = function(id, changeData) {
-		
-	//Let clients know and they will each emit a tagchanged if they
-	//have mathcing subscriptions.
-	db.clientdb.tagChanged(id, changeData);    
-};
 
 //Load the project.yml file into db vars.
 
@@ -86,10 +78,6 @@ var load = function(projectdir, callback) {
 
                 //load tagdb and create system tags
                 db.tagdb.load(json.tags);
-
-                //TODO - move this to tagdb?
-                db.tagdb.emitter.on('tagChanged', function(id, data) {
-                    tagChanged(id,data)});
 
                 //Link up drivers
                 var tags = db.tagdb.getTags();
@@ -149,12 +137,6 @@ var applicationCall = function(name, data) {
 	return {result:undefined, err:"Error: Application call ["+name+"] not found."};
 
 };
-
-var createClient = function(socket) {
-	//TODO - prolly need to be able to add authentication stuff here
-	db.clientdb.createClient(exports, socket);
-};
 	
 //Export the public stuff
 module.exports.load = load;
-module.exports.createClient = createClient;
