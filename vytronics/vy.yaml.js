@@ -35,19 +35,25 @@ var yaml = require('js-yaml');
 //Allow a custom type to load/compile zero argument function bodies that just need to
 //mess with the this var and optionally return a result
 var objFunctionYamlType = new yaml.Type('tag:yaml.org,2002:vy/objfunc', {
-    loadKind: 'scalar',
-    loadResolver: function (state){
-        state.result = new Function(state.result);
-
-        if (typeof(state.result) == "function") {
-            return true;
+    kind: 'scalar', //The yaml data type
+    
+    resolve: function (data){ //Validity check on the data
+        //No checks needed?
+        return true;
+    },
+    
+    construct: function (data){ //Build the js object
+        try {
+            return new Function(data);
         }
-            return false;
+        catch (err){
+            throw new Error('vy/objfunc compile error:' + err.message);
+        }
     },
-    dumpPredicate: function (object){
-        return '[object Function]' === Object.prototype.toString.call(object);
-    },
-    dumpRepresenter: function(object) { return object.toString(); }
+    
+    //How dumper should display - display function as a string
+    represent: function(func) { return func.toString(); }
+    
 });
 
 //Allow a custom type to load/compile a zero parameter, single statement function
@@ -59,18 +65,20 @@ var objFunctionYamlType = new yaml.Type('tag:yaml.org,2002:vy/objfunc', {
 //  myfunc: function() { return this*2 + 3; }
 //
 var lambdaFunctionYamlType = new yaml.Type('tag:yaml.org,2002:vy/lambda', {
-    loadKind: 'scalar',
-    loadResolver: function (state){      
-        state.result = new Function( 'return ' + state.result + ';');
-        if (typeof(state.result) == "function") {
-            return true;
+    kind: 'scalar',
+    
+    construct: function (data){
+        try {
+            return new Function( 'return ' + data + ';');
         }
-        return false;
+        catch (err){
+            throw new Error('vy/lambda compile error:' + err.message);
+        }
     },
-    dumpPredicate: function (object){
-        return '[object Function]' === Object.prototype.toString.call(object);
-    },
-    dumpRepresenter: function(object) { return object.toString(); }
+
+    //How dumper should display - display function as a string
+    represent: function(func) { return func.toString(); }
+
 });
 
 //Allow a custom type to load an env variable with a supplied default if the env is not
@@ -81,9 +89,10 @@ var lambdaFunctionYamlType = new yaml.Type('tag:yaml.org,2002:vy/lambda', {
 //  port_name: !!vy/env LCP_PORT_ENV:COM11,
 //
 var envFunctionYamlType = new yaml.Type('tag:yaml.org,2002:vy/env', {
-    loadKind: 'scalar',
-    loadResolver: function (state){
-        var tokens = (state.result).split(':');
+    kind: 'scalar',
+
+    construct: function (data){
+        var tokens = data.split(':');
         var val = process.env[tokens[0]];
         
         //If env is not defined then try default fallback value
@@ -94,8 +103,7 @@ var envFunctionYamlType = new yaml.Type('tag:yaml.org,2002:vy/env', {
             }
         }        
             
-        state.result = val;
-        return true;
+        return val;
     }
 });
 
