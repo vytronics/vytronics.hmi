@@ -73,7 +73,35 @@ var load = function (json) {
                 continue;
             }
             
-			tags[tagid] = new Tag(tagid,json[tagid]);
+            var tag_config = json[tagid];
+            
+            //If no tag create function supplied then simply create a tag from json
+            if (!tag_config.create) {
+                tags[tagid] = new Tag(tagid,json[tagid]);
+            }
+            
+            //Else - Execute the creation function which should spit out either a single tag_config literal
+            //  {   tagid: "some_id",
+            //      config: { }
+            //  }
+            //or an array of literals like the above
+            else if ( vyutil.isFunction(tag_config.create) ){
+                tag_config = tag_config.create(tagid, tag_config.config);
+
+                tag_config = Array.isArray(tag_config) ? tag_config: [tag_config];
+
+                tag_config.forEach( function (tag_info){
+                    if ((!tag_info) || (!tag_info.tagid)) {
+                        log.error('tagid:' + tagid + ' create error. Invalid config info. Must return {tagid:xxx,  config:xxx} config:', tag_info);
+                    }
+                    else {
+                        tags[tag_info.tagid] = new Tag(tag_info.tagid, tag_info.config);
+                    }
+                });
+            }
+            else {
+                log.error('tagid:' + tagid + ' create error. Invalid config:', tag_config);
+            }
 		}
 	}
     
