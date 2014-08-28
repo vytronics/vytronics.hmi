@@ -187,7 +187,8 @@ var vy = (function () {
                 //Make a few functions always available in stage
                 //TODO - need to do some thinking on how to best modularize script injection
                 this.contentWindow['vy_desktop'] = {
-                    injectScript: injectScript
+                    injectScript: injectScript,
+                    create_ctl_popup: create_ctl_popup
                 };
 
                 
@@ -273,7 +274,14 @@ console.log('create_ctl_popup elem:', elem, ' items:', items);
             show_popup();
         });
     }
-            
+    
+    //TODO - Hack for non-iframe html such as PointPanel.html until modularization is worked out
+    var vy_desktop = {
+        injectScript: injectScript,
+        create_ctl_popup: create_ctl_popup
+    };
+    
+    
 	//Return public members
     return {
         create_ctl_popup: create_ctl_popup

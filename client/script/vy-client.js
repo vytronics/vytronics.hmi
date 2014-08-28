@@ -159,7 +159,8 @@ var vyhmi = (function (){
     });
  
     function create_ctl_popup(elem,items) {
-        vy-desktop.create_ctl_popup(elem, items);   
+        console.log('#####vy_desktop:',vy_desktop);
+        vy_desktop.create_ctl_popup(elem, items);   
     }    
     
     //Link a tag change to an element in the DOM
@@ -374,6 +375,7 @@ var vyhmi = (function (){
         poke_style: map_style, //To keep backwards capability
         rotate: rotate,
         create_ctl_popup: create_ctl_popup,
+        socket: socket,
         dump: dump
     };
 

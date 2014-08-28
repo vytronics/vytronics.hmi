@@ -51,9 +51,10 @@ development and testing.
  
     
     
-<script src="/script/vy-desktop.js"></script>
-<script src="/socket.io/socket.io.js"></script>
 
+<script src="/socket.io/socket.io.js"></script>
+<script src="/script/vy-desktop.js"></script>
+<script src="/script/vy-client.js"></script>
 
 
 <!-- styles unique to this page -->
@@ -96,12 +97,12 @@ development and testing.
       buttons: {
         Write: function() {
             var dialog = $(this);            
-            vy.app_call('write_tag_request', {tagid:tagid.val(), value:value.val()}, function(data,err){            
+            vyhmi.app_call('write_tag_request', {tagid:tagid.val(), value:value.val()}, function(data,err){            
                 dialog.dialog("close");
             });
          },
         Apply: function() {
-            vy.app_call('write_tag_request', {tagid:tagid.val(), value:value.val()}, function(data,err){                
+            vyhmi.app_call('write_tag_request', {tagid:tagid.val(), value:value.val()}, function(data,err){                
             });
          },
         Cancel: function() {
@@ -132,7 +133,7 @@ development and testing.
         $(div).empty(); //Clear the container out
         
         //Query server for points and build table
-        vy.app_call('query_tags', {}, function(data,err){   
+        vyhmi.app_call('query_tags', {tagid_regex:'.*'}, function(data,err){   
             if(err) {
                 console.log('query_tags error:' + err.message);
                 return;
@@ -160,7 +161,7 @@ development and testing.
                                                 .data('value',td.text())
                                                 .dialog('open');
                                         });
-                                        vy.create_tagsub('pointPanel', tagid, function(tag){                                
+                                        vyhmi.create_tagsub(tagid, function(tag){                                
                                             td.text(tag.value);                                
                                         });
                                         return td;
@@ -181,7 +182,7 @@ development and testing.
         $(div).empty(); //Clear the container out
         
         //Query server for points and build table
-        vy.app_call('query_driver_info', {}, function(data,err){   
+        vyhmi.app_call('query_driver_info', {}, function(data,err){   
             if(err) {
                 console.log('query_driver_info error:' + err.message);
                 return;
@@ -206,7 +207,7 @@ development and testing.
                                         var td = $("<td>").text('---');                                        
                                         //Subscribe to started tag
                                         var tagid = 'sys.driver.' + driverInfo.id + '.started';
-                                        vy.create_tagsub('pointPanel', tagid, function(tag){                                
+                                        vyhmi.create_tagsub(tagid, function(tag){                                
                                             td.text(tag.value);                                
                                         });
                                         return td;
@@ -244,9 +245,12 @@ development and testing.
     On document ready listen for connection status
     */
     $(document).ready( function() {
-
-        vy.addConnectionListener(onSocketStatus);
-
+        vyhmi.socket.on('connect', function (){
+            onSocketStatus(true);
+        });
+        vyhmi.socket.on('disconnect', function (){
+            onSocketStatus(false);
+        });
     });
 
 </script>

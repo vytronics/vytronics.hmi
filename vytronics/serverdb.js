@@ -34,7 +34,7 @@ module.exports.listen_port = undefined;
 module.exports.load = function (json) {
     
 	if ( undefined === json ) {
-		return;
+		json = {}
 	}
     
     //Get network config. Order of precedence is:

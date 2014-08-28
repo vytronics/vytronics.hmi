@@ -111,12 +111,9 @@ exports.calls.pulse_tag_request = {
 exports.calls.query_tags = {
     call_function: function(call_data) {
         
-        //TODO add regex filters, property filters, and prototype object in call_data
-        //specifying which properties to return. For now just dump tag id stuff
+        var taginfo = db.tagdb.getTagInfo(call_data.tagid_regex, call_data.props);
 
-        var tags = db.tagdb.getTags();
-
-        return tags;
+        return taginfo;
     }
 };
 

@@ -179,6 +179,33 @@ var getTagsRegex = function (tagid_regex){
     
 };
 
+var getTagInfo = function (tagid_regex, props){
+    var matches = [];
+
+    
+console.log('####props:',props);    
+    
+    Object.getOwnPropertyNames(tags).forEach( function(tagid){
+        if (tagid.match(tagid_regex)) {
+            
+            //If no specific properties requested then just send back tagids array
+            if ( !props){
+                matches.push(tagid);
+            }
+            else {
+                var tag = tags[tagid];
+                var tag_props = { tagid: tagid };
+                props.forEach(function (prop){
+                    tag_props[prop] = tag[prop];
+                });
+                matches.push(tag_props);
+            }
+        }
+    });
+
+    return matches; 
+};
+
 module.exports.get_tag_types = function (){
     //make immutable by returning a copy
     return TAG_TYPES.slice();
@@ -189,6 +216,7 @@ module.exports.start = start;
 module.exports.on = function (type, listener){ emitter.on(type, listener); },
 module.exports.getTags = getTags;
 module.exports.getTag = getTag;
+module.exports.getTagInfo = getTagInfo;
 module.exports.getTagsRegex = getTagsRegex;
 
 //Ask driver to write a value to this tagid. This is typically called from a client
@@ -257,7 +285,7 @@ function Tag(tagid, json) {
 	}    
 }
 
-//Set the tag value and send notifications
+//Set the tag value and send notifications. Converts from raw telemetry to HMI value
 //If tag.value_info object is defined then this info is used to value_info
 //  to/from raw telemetry value. Otherwise try to coerce to number.
 //  
@@ -320,7 +348,7 @@ Tag.prototype.setValue = function(value) {
 	emitter.emit("tagChanged", this.id, data);
 };
 
-//Coerce to and return telemetry value
+//Coerce to and return raw telemetry value
 //
 Tag.prototype.coerce_value = function (value){
   
