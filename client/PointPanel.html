@@ -49,7 +49,7 @@ development and testing.
 <script src="/external/script/jquery-ui.min.js"></script>
 <script src="/external/script/jquery.dataTables.min.js"></script>
  
-    
+
     
 
 <script src="/socket.io/socket.io.js"></script>
@@ -133,7 +133,7 @@ development and testing.
         $(div).empty(); //Clear the container out
         
         //Query server for points and build table
-        vyhmi.app_call('query_tags', {tagid_regex:'.*'}, function(data,err){   
+        vyhmi.app_call('query_tags', {tagid_regex:'.*', props: ['value_info']}, function(data,err){   
             if(err) {
                 console.log('query_tags error:' + err.message);
                 return;
@@ -147,22 +147,32 @@ development and testing.
                 $("<tbody>").append(
                     function() {
                         var rows = [];
-                        data.forEach( function(tagid){
+                        data.forEach( function(tag_info){
                             //Create a row for each tag
                             var row = ($("<tr>").append(
-                                    $("<td>").text(tagid),
+                                    $("<td>").text(tag_info.tagid),
                                     function(){
                                         var td = $("<td>").text('---');
                                         //Subscribe to tag
-                                        td.on('click', function() {
-                                            console.log('You clicked on data for tag:' + tagid);
+                                        td.on('click', function() {                                            
                                             $('#write-form')
-                                                .data('tagid', tagid)
+                                                .data('tagid', tag_info.tagid)
                                                 .data('value',td.text())
                                                 .dialog('open');
                                         });
-                                        vyhmi.create_tagsub(tagid, function(tag){                                
-                                            td.text(tag.value);                                
+                                        vyhmi.create_tagsub(tag_info.tagid, function(tag){
+                                            
+                                            var value = tag.value;
+                                            
+                                            //See if there are any value formatting to do
+                                            var value_info = tag_info.value_info;
+                                            if (value_info) {
+                                                if ( (value_info.type === 'analog') && (value_info.num_digits) ){
+                                                    value = value.toFixed(value_info.num_digits);
+                                                }
+                                            }
+                                            
+                                            td.text(value);                                
                                         });
                                         return td;
                                     }()));                            
@@ -230,27 +240,17 @@ development and testing.
         build_drivers_table('#driverPanel');
     }
 
-    //Handle socket connection status
-    function onSocketStatus(connected){
-        if(connected) {
-            drawTables();
-        }
-        else {
-            disableTables();
-        }        
-    }
-    
-
     /*
     On document ready listen for connection status
     */
     $(document).ready( function() {
         vyhmi.socket.on('connect', function (){
-            onSocketStatus(true);
+            drawTables();
         });
         vyhmi.socket.on('disconnect', function (){
-            onSocketStatus(false);
-        });
+            //Unsubscribe from all tags
+            vyhmi.unsubscribeAllTags();
+        });        
     });
 
 </script>
@@ -259,7 +259,7 @@ development and testing.
 
 <body>
     <!--hidden form instrumented by JQueryUI script. Pops up when user clicks on point value-->
-    <div id="write-form" title="WRITE TAG VALUE">
+    <div id="write-form" title="WRITE TAG VALUE" style="background-color:white;">
         <form>
         <fieldset>
             <label for="tagid">TAG ID</label>

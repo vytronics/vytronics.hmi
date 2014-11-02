@@ -71,17 +71,19 @@ var vyhmi = (function (){
 	//Unlink callback and tell server to unsubscribe
 	function unsubscribe_tag(sub) {
         
-        //TODO - need to check for connected first?
+        
 
         //This is where it is important to have a GUID for each subscription. If there is more than
         //one subscription for a given tag then having guid makes sure other subs are not effected should
         //the subsystem be changed to allow dynamic subscriptions within an actively loaded stage HMI.
-        socket.emit("unsubscribeTag", sub.tagid, sub.guid, function (result) {
-			if (!result) {
-				console.log("unsubscribe error. tagId:" + sub.tagid);
-				return;
-			}            
-		});
+        if ( socket.connected ){
+            socket.emit("unsubscribeTag", sub.tagid, sub.guid, function (result) {
+                if (!result) {
+                    console.log("unsubscribe error. tagId:" + sub.tagid);
+                    return;
+                }            
+            });
+        }
         
         //Remove and delete no matter what
         var i = tag_subs.indexOf(sub);
@@ -99,8 +101,13 @@ var vyhmi = (function (){
             subscribe_tag(sub);
         });
     }
+    
+    function unsubscribeAllTags (){
+        tag_subs.forEach( function (sub){
+            unsubscribe_tag(sub);
+        });
+    }
 
-                			    
     //Execute a remote function call on the server and invoke callback(result_data, err) when complete
     function app_call(name, call_data, callback) {
         socket.emit("app_call", name, call_data, function(result_data, err) {
@@ -148,6 +155,7 @@ var vyhmi = (function (){
         tag_subs.forEach( function (sub){
             try {
                 if (sub.tagid === tagid) {
+                    //console.log('tagid:' + tagid + ' callback:' + sub.callback);
                     sub.callback(tag);
                 }
             } catch (err) {
@@ -158,9 +166,8 @@ var vyhmi = (function (){
         });
     });
  
-    function create_ctl_popup(elem,items) {
-        console.log('#####vy_desktop:',vy_desktop);
-        vy_desktop.create_ctl_popup(elem, items);   
+    function create_ctl_popup(elem,items, title) {
+        vy_desktop.create_ctl_popup(elem, items, title);   
     }    
     
     //Link a tag change to an element in the DOM
@@ -215,7 +222,8 @@ var vyhmi = (function (){
         }
         
         //Get extents of the contained contents
-        var BB = elem.getBBox();                
+        var BB = elem.getBBox();
+        console.log('scale_fit getBBox:', BB);
         
         //TODO - do styles need to be cleared?
         //elem.remoteAttribute('style');
@@ -255,7 +263,9 @@ var vyhmi = (function (){
     //See map_attr for value parameter usage
     //NOTE - used to be named poke_style
     function map_style( elem, tagid, stylename, values) {   
-        linktag( elem, tagid, function(tag){elem.style[stylename] = values[tag.value];});
+        linktag( elem, tagid, function(tag){
+            //console.log('map_style tagid:' + tagid + ' val:[', tag.value, '] elem:', elem);
+            elem.style[stylename] = values[tag.value];});
     }
          
     //Convinience function to rotate an element about its center based on tag value.
@@ -375,6 +385,7 @@ var vyhmi = (function (){
         poke_style: map_style, //To keep backwards capability
         rotate: rotate,
         create_ctl_popup: create_ctl_popup,
+        unsubscribeAllTags: unsubscribeAllTags,
         socket: socket,
         dump: dump
     };

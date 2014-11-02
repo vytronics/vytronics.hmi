@@ -214,10 +214,8 @@ var vy = (function () {
     Instantiate a JQuery Mobile popup at runtime. Credits to John Chacko for the idea
     http://johnchacko.net/?p=44
     */
-    function create_ctl_popup(elem, items) {
+    function create_ctl_popup(elem, items, title) {
 
-console.log('create_ctl_popup elem:', elem, ' items:', items);        
-        
         function show_popup() {
 
             //Need to do anything?
@@ -228,6 +226,12 @@ console.log('create_ctl_popup elem:', elem, ' items:', items);
 
                 $('<a data-role="button" data-theme="g" data-icon="delete" data-iconpos="notext"' +
                     ' class="ui-btn-right closePopup">Close</a>'),
+                
+                $('<h3>').append(
+                    (function (){
+                        return title? title: "Select an option:";
+                    })()
+                ),
 
                 $('<ul data-role="listview" data-inset="true" style="width:180px;" data-theme="a">').append(
                     (function (){
